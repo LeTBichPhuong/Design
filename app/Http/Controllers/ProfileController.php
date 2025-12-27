@@ -64,7 +64,9 @@ class ProfileController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật thành công!',
-                'avatar_url' => $user->avatar ? asset('storage/avatars/' . $user->avatar) : asset('default-avatar.png')
+                $avatarUrl = $user->avatar 
+                    ? asset('storage/avatars/' . $user->avatar) 
+                    : asset('storage/placeholder.png'),
             ]);
         }
 

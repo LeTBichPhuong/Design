@@ -136,7 +136,10 @@
             <!-- User Section -->
             @auth
                 <div class="user-menu" id="userMenu">
-                    <img src="{{ auth()->user()->avatar ? asset('storage/avatars/' . auth()->user()->avatar) : asset('default-avatar.png') }}" alt="Avatar" class="user-avatar">
+                    <img src="{{ Auth::user()->avatar ? asset('storage/avatars/' . Auth::user()->avatar) : asset('images/placeholder.png') }}" 
+                    onerror="this.src='{{ asset('images/placeholder.png') }}'" 
+                    alt="Avatar" 
+                    class="user-avatar">
                     <span class="user-name">{{ auth()->user()->name }}</span>
                     <i class='bx bx-chevron-down'></i>
                     

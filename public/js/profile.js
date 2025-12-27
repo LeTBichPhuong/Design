@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lịch sử thiết kế
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const STORAGE_URL = window.storageUrl || '/storage';
-    const PLACEHOLDER = `${STORAGE_URL}/placeholder.png`;
+    const PLACEHOLDER = `/images/placeholder.png`;
 
     const designsGrid = document.getElementById('designsGrid');
     const searchInput = document.getElementById('searchInput');

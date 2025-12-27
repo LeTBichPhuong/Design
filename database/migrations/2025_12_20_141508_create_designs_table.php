@@ -14,24 +14,14 @@ return new class extends Migration
         Schema::create('designs', function (Blueprint $table) {
             $table->id();
 
-            // User tạo thiết kế (NULL nếu guest)
             $table->foreignId('user_id')
                   ->nullable()
                   ->constrained()
                   ->nullOnDelete();
-
-            // Tên thiết kế
             $table->string('name');
-
-            // Ảnh áo gốc
             $table->string('base_image');
-
-            // JSON toàn bộ cấu hình thiết kế (SVG + patch + text)
             $table->json('config');
-
-            // Ảnh xuất in xưởng
             $table->string('export_image')->nullable();
-
             $table->timestamps();
         });
     }

@@ -13,9 +13,7 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="user-header">
-                <img src="{{ auth()->user()->avatar ? asset('storage/avatars/' . auth()->user()->avatar) : asset('default-avatar.png') }}" 
-                     alt="Avatar" 
-                     class="user-avatar">
+                <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" onerror="this.src='{{ asset('images/placeholder.png') }}'" alt="Avatar" class="user-avatar">
                 <div class="user-name">{{ auth()->user()->name }}</div>
                 <div class="user-email">{{ auth()->user()->email }}</div>
                 <a href="{{ route('home') }}" class="back-home">
@@ -64,7 +62,7 @@
                     <div class="profile-card">
                         <div class="avatar-section">
                             <div class="avatar-upload">
-                                <img src="{{ auth()->user()->avatar ? asset('storage/avatars/' . auth()->user()->avatar) : asset('default-avatar.png') }}" 
+                                <img src="{{ auth()->user()->avatar ? asset('storage/avatars/' . auth()->user()->avatar) : asset('avatar.jpg') }}" 
                                      alt="Avatar" 
                                      class="profile-avatar"
                                      id="avatarPreview"

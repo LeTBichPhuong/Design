@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    // === Toggle dropdown trong top-menu ===
+    // Toggle dropdown trong top-menu
     let currentDropdown = null;
 
     document.querySelectorAll('.menu-item').forEach(item => {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // === User dropdown ===
+    // User dropdown
     const userMenu = document.getElementById('userMenu');
     const userDropdown = document.getElementById('userDropdown');
 
@@ -43,13 +43,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // === Auth Modal ===
+    // Auth Modal
     const modal = document.getElementById('authModal');
     const loginBtn = document.getElementById('btnShowLogin');
     const registerBtn = document.getElementById('btnShowRegister');
     const closeBtn = document.getElementById('authModalClose');
 
-    // 🔥 SỬA ĐÚNG ID FORM
     const loginForm = document.getElementById('loginFormSubmit');
     const registerForm = document.getElementById('registerFormSubmit');
 
@@ -102,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // === Submit login / register ===
+    // Submit login / register
     function submitAuthForm(formId) {
         const form = document.getElementById(formId);
         if (!form) return;
@@ -120,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Accept': 'application/json'
                 },
                 body: formData,
-                credentials: 'same-origin'  // 🔥 Quan trọng: Để gửi cookie
+                credentials: 'same-origin'
             })
             .then(async res => {
                 const data = await res.json();
@@ -130,11 +129,9 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 showToast(data.message || 'Thành công', 'success');
                 
-                // 🔥 Đóng modal trước khi reload
                 const modal = document.getElementById('authModal');
                 if (modal) modal.style.display = 'none';
                 
-                // 🔥 Reload sau 500ms
                 setTimeout(() => {
                     window.location.reload();
                 }, 500);
@@ -154,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function () {
     submitAuthForm('loginFormSubmit');
     submitAuthForm('registerFormSubmit');
 
-    // === Toast ===
+    // Toast
     window.showToast = function (message, type = 'success') {
         const toast = document.getElementById('toast');
         if (!toast) return;

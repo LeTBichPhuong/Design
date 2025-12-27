@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const BASE_IMAGE = 'us-marines.jpg';
     
     const STORAGE_URL = window.storageUrl || '/storage';
-    const PLACEHOLDER = `${STORAGE_URL}/placeholder.png`;
+    const PLACEHOLDER = `/images/placeholder.png`;
 
     window.currentDesignId = null;
 
