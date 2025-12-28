@@ -6,6 +6,7 @@
     <title>In tên trên áo</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('home.css') }}">
+    <link rel="stylesheet" href="{{ asset('responsive.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
@@ -271,6 +272,7 @@
     <script src="{{ asset('js/home.js') }}"></script>
     <script src="{{ asset('js/export.js') }}"></script>
     <script src="{{ asset('js/user.js') }}"></script>
+    <script src="{{ asset('js/responsive.js') }}"></script>
 
     @if(session('success'))
         <script>

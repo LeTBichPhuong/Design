@@ -765,29 +765,3 @@ body {
     }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .saved-designs {
-        width: 200px;
-    }
-    
-    .content-wrapper {
-        margin-left: 200px;
-    }
-}
-
-@media (max-width: 480px) {
-    .saved-designs {
-        width: 100%;
-        height: 150px;
-        position: relative;
-        border-right: none;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    
-    .content-wrapper {
-        margin-left: 0;
-        margin-top: 150px;
-    }
-}
-
