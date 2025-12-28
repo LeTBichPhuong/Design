@@ -1,16 +1,12 @@
-/*=======================================
-   DESKTOP BASE - Ẩn nút toggle trên desktop
-  ======================================= */
+/* DESKTOP BASE - Ẩn nút toggle trên desktop*/
 @media (min-width: 1025px) {
     .menu-toggle {
         display: none !important;
     }
 }
 
-/*=======================================
-   TABLET - 769px đến 1024px
-  ======================================= */
-@media (min-width: 769px) and (max-width: 1024px) {
+/* TABLET - 769px đến 1180px */
+@media (min-width: 769px) and (max-width: 1180px) {
     /* Ẩn nút toggle trên tablet */
     .menu-toggle {
         display: none !important;
@@ -106,9 +102,7 @@
     }
 }
 
-/*=======================================
-   MOBILE - max-width: 768px
-  ======================================= */
+/* MOBILE - max-width: 768px */
 @media (max-width: 768px) {
     body {
         flex-direction: row;
@@ -635,9 +629,7 @@
     }
 }
 
-/*=======================================
-   LANDSCAPE MODE - Điện thoại nằm ngang
-  ======================================= */
+/* LANDSCAPE MODE - Điện thoại nằm ngang */
 @media (max-width: 768px) and (orientation: landscape) {
     .saved-designs {
         max-height: 150px;
@@ -683,9 +675,7 @@
     }
 }
 
-/*=======================================
-   SMALL MOBILE - Điện thoại nhỏ
-  ======================================= */
+/* SMALL MOBILE - Điện thoại nhỏ */
 @media (max-width: 375px) {
     .saved-item,
     .btn-new-design {

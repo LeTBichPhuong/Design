@@ -1,7 +1,4 @@
-// ============================================
 // MOBILE SIDEBAR OVERLAY - Responsive Handler
-// ============================================
-
 document.addEventListener('DOMContentLoaded', function() {
     const topMenu = document.querySelector('.top-menu');
     const savedDesigns = document.querySelector('.saved-designs');
@@ -13,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // ===== TẠO NÚT TOGGLE =====
+    // TẠO NÚT TOGGLE
     let toggleBtn = document.querySelector('.menu-toggle');
     
     if (!toggleBtn) {
@@ -26,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         topMenu.insertBefore(toggleBtn, topMenu.firstChild);
     }
     
-    // ===== DI CHUYỂN USER MENU/AUTH BUTTONS VÀO SIDEBAR =====
+    // DI CHUYỂN USER MENU/AUTH BUTTONS VÀO SIDEBAR
     if (window.innerWidth <= 768) {
         const userMenu = document.getElementById('userMenu');
         const authButtons = document.querySelector('.auth-buttons');
@@ -42,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ===== XỬ LÝ TOGGLE SIDEBAR =====
+    // XỬ LÝ TOGGLE SIDEBAR
     function openSidebar() {
         savedDesigns.classList.add('mobile-show');
         body.classList.add('sidebar-open');
@@ -83,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleSidebar();
     });
     
-    // ===== ĐÓNG SIDEBAR KHI CLICK OVERLAY =====
+    // ĐÓNG SIDEBAR KHI CLICK OVERLAY
     body.addEventListener('click', function(e) {
         if (window.innerWidth <= 768) {
             // Kiểm tra xem click có phải vào overlay không
@@ -100,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.stopPropagation();
     });
     
-    // ===== KHỞI TẠO TRẠNG THÁI BAN ĐẦU =====
+    // KHỞI TẠO TRẠNG THÁI BAN ĐẦU
     function initializeSidebar() {
         if (window.innerWidth <= 768) {
             // Mặc định đóng sidebar trên mobile
@@ -135,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ===== XỬ LÝ KHI RESIZE WINDOW =====
+    // XỬ LÝ KHI RESIZE WINDOW
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
@@ -144,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 250);
     });
     
-    // ===== ĐÓNG DROPDOWN KHI CLICK BÊN NGOÀI =====
+    // ĐÓNG DROPDOWN KHI CLICK BÊN NGOÀI
     document.addEventListener('click', function(e) {
         // Đóng tất cả dropdown menu
         const dropdowns = document.querySelectorAll('.dropdown-menu.show');
@@ -167,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // ===== XỬ LÝ USER MENU TRONG SIDEBAR =====
+    // XỬ LÝ USER MENU TRONG SIDEBAR
     const userMenu = document.getElementById('userMenu');
     if (userMenu && window.innerWidth <= 768) {
         userMenu.addEventListener('click', function(e) {
@@ -180,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ===== TỐI ƯU CHO MENU ITEMS - Tooltip cho icon-only items =====
+    // TỐI ƯU CHO MENU ITEMS - Tooltip cho icon-only items
     if (window.innerWidth <= 768) {
         // Thêm tooltip cho menu items
         const menuTextMap = {
@@ -199,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ===== PREVENT SCROLL TRÊN BODY KHI SIDEBAR MỞ =====
+    // PREVENT SCROLL TRÊN BODY KHI SIDEBAR MỞ
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             if (mutation.attributeName === 'class') {
@@ -217,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         attributeFilter: ['class']
     });
     
-    // ===== TỐI ƯU CHO TOUCH DEVICES =====
+    // TỐI ƯU CHO TOUCH DEVICES
     if ('ontouchstart' in window) {
         body.classList.add('touch-device');
         
@@ -252,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ===== AUTO-CLOSE SIDEBAR KHI CHỌN ITEM (optional) =====
+    // AUTO-CLOSE SIDEBAR KHI CHỌN ITEM (optional)
     const savedItems = document.querySelectorAll('.saved-item');
     savedItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -265,15 +262,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // ===== KHỞI CHẠY =====
+    // KHỞI CHẠY
     initializeSidebar();
     
-    console.log('✅ Mobile sidebar overlay initialized');
+    console.log('Mobile sidebar overlay initialized');
 });
 
-// ============================================
 // POSITION DROPDOWN CORRECTLY ON MOBILE
-// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const menuItems = document.querySelectorAll('.menu-item');
     
@@ -314,25 +309,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ============================================
 // RESPONSIVE HELPER
-// ============================================
 window.getScreenSize = function() {
     const width = window.innerWidth;
     if (width <= 768) return 'mobile';
-    if (width <= 1024) return 'tablet';
+    if (width <= 1180) return 'tablet';
     return 'desktop';
 };
 
 // Debug log (chỉ trên localhost)
 if (window.location.hostname === 'localhost') {
     let currentSize = window.getScreenSize();
-    console.log(`📱 Current screen: ${currentSize}`);
+    console.log(`Current screen: ${currentSize}`);
     
     window.addEventListener('resize', function() {
         const newSize = window.getScreenSize();
         if (newSize !== currentSize) {
-            console.log(`📱 Screen changed: ${currentSize} → ${newSize}`);
+            console.log(`Screen changed: ${currentSize} → ${newSize}`);
             currentSize = newSize;
         }
     });
