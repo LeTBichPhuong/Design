@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>In tên trên áo</title>
+    <title>Design Studio</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('home.css') }}">
     <link rel="stylesheet" href="{{ asset('responsive.css') }}">
@@ -11,27 +11,54 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
-    <!-- Cột lưu trữ thiết kế - bên trái full height -->
+    {{-- cột menu trái --}}
     <div class="saved-designs">
-        <h2><i class='bx bxs-file-image'></i> THIẾT KẾ ĐÃ LƯU</h2>
-        <div class="saved-content">
-            <div id="savedList"></div>
-            <button id="newDesignBtn" class="btn-new-design" title="Tạo thiết kế mới">
-                <span class="icon">+</span>
-                <span class="text">Tạo thiết kế mới</span>
-            </button>
-        </div>
-    </div>
+        <div class="left-toolbar">
 
-    <!-- Content wrapper - bên phải saved-designs -->
-    <div class="content-wrapper">
-        <!-- Top Menu Bar -->
-        <div class="top-menu">
-            <!-- Nhập text -->
-            <div class="menu-item" id="menuText">
-                <i class='bx bx-edit-alt'></i> Nhập chữ
-                <div class="dropdown-menu" id="dropdownText">
-                    <h4>NHẬP CHỮ IN</h4>
+            <div class="tool-btn active" data-target="menuSaved">
+                <i class='bx bxs-file-image'></i>
+                <span>Thiết kế</span>
+            </div>
+
+            <div class="tool-btn" data-target="menuText">
+                <i class='bx bx-edit-alt'></i>
+                <span>Nhập chữ</span>
+            </div>
+
+            <div class="tool-btn" data-target="menuFont">
+                <i class='bx bx-font'></i>
+                <span>Font</span>
+            </div>
+
+            <div class="tool-btn" data-target="menuColors">
+                <i class='bx bx-palette'></i>
+                <span>Màu sắc</span>
+            </div>
+
+        </div>
+
+        {{-- panel --}}
+        <div class="left-panel">
+            <div id="menuSaved" class="panel-content active">
+                <h2 style="margin: 0">
+                    <i class='bx bxs-file-image'></i>
+                    Thiết Kế Gần Đây
+                </h2>
+                <div class="saved-content">
+                    <div id="savedList"></div>
+
+                    <button id="newDesignBtn" class="btn-new-design" title="Tạo thiết kế mới">
+                        <span class="icon">+</span>
+                        <span class="text">Tạo thiết kế mới</span>
+                    </button>
+                </div>
+
+            </div>
+
+            {{-- nhập chữ --}}
+            <div id="menuText" class="panel-content">
+                <div class="dropdown-menu show">
+                    <h2>Nhập Chữ In</h2>
                     <div class="menu-input-group">
                         <label>Nội dung in</label>
                         <input
@@ -44,50 +71,13 @@
                 </div>
             </div>
 
-            <div class="menu-divider"></div>
-
-            <!-- Vị trí ngắn -->
-            <div class="menu-item" id="menuPositionShort">
-                <i class='bx bx-chevron-down-circle'></i> Vị trí ≤13 ký tự
-                <div class="dropdown-menu" id="dropdownShort">
-                    <h4>VỊ TRÍ CHO CHỮ NGẮN (≤13 ký tự)</h4>
-                    <div class="menu-input-group">
-                        <label>Vị trí X <span class="range-display" id="posXValue">1416</span></label>
-                        <input type="range" id="posX" min="0" max="11417" step="1" value="1416">
-                    </div>
-                    <div class="menu-input-group">
-                        <label>Vị trí Y <span class="range-display" id="posYValue">7748</span></label>
-                        <input type="range" id="posY" min="0" max="15264" step="1" value="7748">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Vị trí dài -->
-            <div class="menu-item" id="menuPositionLong">
-                <i class='bx bx-chevron-down-circle'></i> Vị trí >13 ký tự
-                <div class="dropdown-menu" id="dropdownLong">
-                    <h4>VỊ TRÍ CHO CHỮ DÀI (>13 ký tự)</h4>
-                    <div class="menu-input-group">
-                        <label>Vị trí X <span class="range-display" id="longPosXValue">1912</span></label>
-                        <input type="range" id="longPosX" min="0" max="11417" step="1" value="1912">
-                    </div>
-                    <div class="menu-input-group">
-                        <label>Vị trí Y <span class="range-display" id="longPosYValue">7815</span></label>
-                        <input type="range" id="longPosY" min="0" max="15264" step="1" value="7815">
-                    </div>
-                </div>
-            </div>
-
-            <div class="menu-divider"></div>
-
-            <!-- Font -->
-            <div class="menu-item" id="menuFont">
-                <i class='bx bx-font'></i> Font chữ
-                <div class="dropdown-menu" id="dropdownFont">
-                    <h4>PHÔNG CHỮ</h4>
+            {{-- font chữ --}}
+            <div id="menuFont" class="panel-content">
+                <div class="dropdown-menu show">
+                    <h2>Phông Chữ</h2>
                     <div class="menu-input-group">
                         <label>Phông chữ</label>
-                        <select id="fontFamily">
+                        <select id="fontFamily" class="form-control">
                             <option value="Arial, sans-serif">Arial</option>
                             <option value="'Courier New', monospace">Courier New</option>
                             <option value="'Times New Roman', serif">Times New Roman</option>
@@ -98,17 +88,53 @@
                         </select>
                     </div>
                     <div class="menu-input-group">
-                        <label>Độ đậm chữ <span class="range-display" id="fontWeightValue">600</span></label>
-                        <input type="range" id="fontWeight" min="400" max="900" step="100" value="600">
+                        <label>Cỡ chữ</label>
+                        <div style="position: relative; display: flex; align-items: center; gap: 8px;">
+                            <input 
+                                type="number" 
+                                id="fontSizeInput" 
+                                min="10" 
+                                max="500" 
+                                step="1"
+                                value="80"
+                                placeholder="10-500"
+                                style="width: 80px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-weight: 500;">
+                            <select id="fontSize" style="flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; color: #666;">
+                                <option value="" selected disabled>Chọn nhanh...</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="40">40</option>
+                                <option value="60">60</option>
+                                <option value="80">80</option>
+                                <option value="100">100</option>
+                                <option value="120">120</option>
+                                <option value="150">150</option>
+                                <option value="200">200</option>
+                                <option value="250">250</option>
+                                <option value="300">300</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="format-buttons">
+                        <button class="format-btn format-btn-bold" id="btnBold">
+                            <span>B</span>
+                        </button>
+
+                        <button class="format-btn format-btn-italic" id="btnItalic">
+                            <span>I</span>
+                        </button>
+
+                        <button class="format-btn format-btn-underline" id="btnUnderline">
+                            <span>U</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Màu sắc -->
-            <div class="menu-item" id="menuColors">
-                <i class='bx bx-palette'></i> Màu sắc
-                <div class="dropdown-menu" id="dropdownColors">
-                    <h4>MÀU SẮC</h4>
+            {{-- màu sắc --}}
+            <div id="menuColors" class="panel-content">
+                <div class="dropdown-menu show">
+                    <h2>Màu Sắc</h2>
                     <div class="menu-input-group">
                         <label>Màu chữ</label>
                         <input type="color" id="textColor" value="#dec27a">
@@ -124,9 +150,21 @@
                 </div>
             </div>
 
-            <div class="menu-divider"></div>
+            {{-- nút đóng panel --}}
+            <button class="panel-toggle-btn" id="panelCloseBtn" title="Đóng panel">
+                <i class='bx bx-left-arrow-alt'></i>
+            </button>
+        </div>
+    </div>
 
-            <!-- Action buttons -->
+    {{-- content-wrapper --}}
+    <div class="content-wrapper" id="contentWrapper">
+        {{-- top-menu --}}
+        <div class="top-menu">
+            <div class="name-designs">
+                <h2>Design Studio</h2>
+            </div>
+            {{-- nút lưu xuât --}}
             <div class="action-buttons">
                 <button id="saveBtn">LƯU</button>
                 <button id="exportBtn">XUẤT</button>
@@ -134,7 +172,7 @@
 
             <div class="menu-divider"></div>
 
-            <!-- User Section -->
+            {{-- người dùng --}}
             @auth
                 <div class="user-menu" id="userMenu">
                     <img src="{{ Auth::user()->avatar ? asset('storage/avatars/' . Auth::user()->avatar) : asset('images/placeholder.png') }}" 
@@ -167,49 +205,71 @@
             @endauth
         </div>
 
-        <!-- Main Content Area -->
+        {{-- main --}}
         <div class="main-container">
             <div class="controls"></div>
-            
-            <!-- Preview -->
+            {{-- lưới grid --}}
             <div class="product-preview">
-                <img src="{{ asset('images/us-marines.jpg') }}" alt="Áo">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-placeholder">
+                        <div class="upload-icon">
+                            <i class='bx bx-plus'></i>
+                        </div>
+                        <div class="upload-text">Tạo thiết kế mới</div>
+                        <div class="upload-hint">Nhấp để chọn ảnh hoặc kéo thả ảnh vào đây</div>
+                    </div>
+                </div>
+                {{-- ảnh --}}
+                <div class="image-container" id="imageContainer" style="display: none;">
+                    <img id="baseImage" class="base-image" src="" alt="Thiết kế">
 
-                <svg class="print-layer" viewBox="0 0 11417 15264" preserveAspectRatio="xMidYMid meet">
-                    <rect
-                        id="nameBg"
-                        x="1416"
-                        y="7748"
-                        rx="25"
-                        ry="25"
-                        width="140"
-                        height="31"
-                        fill="#565559"
-                        stroke="#dec27a"
-                        stroke-width="12"
-                    />
+                    <svg class="print-layer" id="printLayer" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <filter id="textUnderline">
+                                <feFlood flood-color="#dec27a"/>
+                                <feComposite in="SourceGraphic"/>
+                            </filter>
+                        </defs>
+                        <rect
+                            id="nameBg"
+                            rx="25"
+                            ry="25"
+                            fill="#565559"
+                            stroke="#dec27a"
+                            stroke-width="12"
+                            style="display: none;"
+                        />
+                        <text
+                            id="printName"
+                            fill="#dec27a"
+                            font-size="160"
+                            font-weight="normal"
+                            font-style="normal"
+                            font-family="Arial, sans-serif"
+                            letter-spacing="0.3"
+                            dominant-baseline="middle"
+                            style="display: none;"
+                        ></text>
+                    </svg>
+                </div>
+                {{-- nút đổi ảnh --}}
+                <button class="change-image-btn" id="changeImageBtn">
+                    <i class='bx bx-image-add'></i>
+                    Đổi ảnh
+                </button>
 
-                    <text
-                        id="printName"
-                        y="8048"
-                        fill="#dec27a"
-                        font-size="16"
-                        font-weight="600"
-                        font-family="Arial, sans-serif"
-                        letter-spacing="0.3"
-                        dominant-baseline="middle"
-                    ></text>
-                </svg>
+                {{-- Hidden File Input  --}}
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
             </div>
         </div>
     </div>
 
-    <!-- Auth Modal -->
+    {{-- auth modal --}}
     <div id="authModal" class="auth-modal">
         <div class="auth-modal-content">
             <span id="authModalClose"><i class='bx bx-x'></i></span>
 
-            <!-- LOGIN -->
+            {{-- login --}}
             <form id="loginFormSubmit" action="/api/login">
                 <h2>Đăng nhập</h2>
                 <p>Nhập thông tin tài khoản</p>
@@ -224,7 +284,7 @@
                 </p>
             </form>
 
-            <!-- REGISTER -->
+            {{-- register --}}
             <form id="registerFormSubmit" action="/api/register" style="display:none;">
                 <h2>Đăng ký</h2>
                 <p>Tạo tài khoản</p>
@@ -247,7 +307,7 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    {{-- toast notification --}}
     <div id="toast" class="toast">
         <span class="toast-icon"></span>
         <div class="toast-content">
@@ -257,7 +317,7 @@
         <div class="toast-progress"></div>
     </div>
 
-    <!-- Confirm Dialog -->
+    {{-- confirm  --}}
     <div id="confirmModal" class="confirm-overlay hidden">
         <div class="confirm-box">
             <h3>Xác nhận</h3>

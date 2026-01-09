@@ -2,30 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property int $id
- * @property string $name
- * @property string $base_image
- * @property array<array-key, mixed> $config
- * @property string|null $export_image
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereBaseImage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereConfig($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereExportImage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Design whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class Design extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'name',
@@ -34,9 +17,30 @@ class Design extends Model
         'export_image',
     ];
 
-   protected $casts = [
+    protected $casts = [
         'config' => 'array',
     ];
 
-}
+    /**
+     * Relationship với User
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
+    /**
+     * Accessor để lấy URL đầy đủ của base image
+     * Tự động phân biệt giữa ảnh upload và ảnh mặc định
+     */
+    public function getBaseImageUrlAttribute()
+    {
+        if (str_starts_with($this->base_image, 'designs/')) {
+            // Ảnh đã upload - từ storage
+            return \Storage::url($this->base_image);
+        } else {
+            // Ảnh mặc định - từ public/images
+            return asset('images/' . $this->base_image);
+        }
+    }
+}

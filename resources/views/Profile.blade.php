@@ -76,7 +76,7 @@
                                 <input type="file" id="avatarInput" name="avatar" accept="image/*">
                             </div>
                             <div class="avatar-info">
-                                <p>Hãy cá nhân hóa tài khoản của bạn bằng một bức ảnh. Ảnh hồ sơ của bạn sẽ xuất hiện trên các ứng dụng và thiết bị của bạn.</p>
+                                <p>Ảnh hồ sơ của bạn sẽ xuất hiện trên các ứng dụng và thiết bị của bạn.</p>
                                 <button type="button" class="btn-change-avatar" onclick="document.getElementById('avatarInput').click()">
                                     Thay đổi ảnh
                                 </button>

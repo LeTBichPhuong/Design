@@ -14,4 +14,9 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'api/*',  // Tắt CSRF cho tất cả route API
     ];
+    public function boot()
+    {
+        ini_set('upload_max_filesize', '50M');
+        ini_set('post_max_size', '60M');
+    }
 }

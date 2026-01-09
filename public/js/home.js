@@ -1,14 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Name từ URL và input
     const params = new URLSearchParams(window.location.search);
-    let currentName = params.get('name') || '';
+    let currentName = '';
 
     const nameInput = document.getElementById('nameInput');
-    if (nameInput) {
-        nameInput.value = currentName;
-        nameInput.addEventListener('input', () => {
-            currentName = nameInput.value.trim();
+    const baseImage = document.getElementById('baseImage');
 
+    let hasSetupBg = false;     // Người dùng đã chọn màu nền chưa
+    let hasSetupStroke = false; // Người dùng đã chọn màu viền chưa
+    
+    // Giữ URL, chỉ load name vào input
+    if (nameInput) {
+        if (nameInput.value && nameInput.value.trim() !== '') {
+            currentName = nameInput.value;
+        } else {
+            currentName = params.get('name') || '';
+            nameInput.value = currentName;
+        }
+        
+        nameInput.addEventListener('input', () => {
+            currentName = nameInput.value;
             const url = new URL(window.location);
             if (currentName) {
                 url.searchParams.set('name', currentName);
@@ -16,107 +26,951 @@ document.addEventListener('DOMContentLoaded', () => {
                 url.searchParams.delete('name');
             }
             window.history.replaceState({}, '', url);
-
             updateName();
         });
     }
 
     // SVG elements
+    const svg = document.getElementById('printLayer');
     const text = document.getElementById('printName');
-    const bg   = document.getElementById('nameBg');
+    const bg = document.getElementById('nameBg');
 
     // Cấu hình
-    const posX = document.getElementById('posX');
-    const posY = document.getElementById('posY');
-    const longPosX = document.getElementById('longPosX');
-    const longPosY = document.getElementById('longPosY');
     const fontFamily = document.getElementById('fontFamily');
+    const fontSize = document.getElementById('fontSize');
+    const fontSizeInput = document.getElementById('fontSizeInput');
     const textColor = document.getElementById('textColor');
     const bgColor = document.getElementById('bgColor');
     const strokeColor = document.getElementById('strokeColor');
-    const fontWeight = document.getElementById('fontWeight');
 
-    const SHORT_LIMIT = 13;
-    const MAX_PER_LINE = 20;
+    // Format buttons
+    const btnBold = document.getElementById('btnBold');
+    const btnItalic = document.getElementById('btnItalic');
+    const btnUnderline = document.getElementById('btnUnderline');
+
+    let isBold = false;
+    let isItalic = false;
+    let isUnderline = false;
+
+    // FIX: Drag state - Dùng biến global để export.js truy cập được
+    let isDragging = false;
+    window.currentTextX = 0;
+    window.currentTextY = 0;
+    window.currentPatchWidth = 0;
+    window.currentPatchHeight = 0;
 
     const paddingX = 60;
     const paddingY = 30;
 
-    const baseFontSize = 160;
-    const minFontSize = 110;
-    const maxPatchWidth = 1800;
+    // Upload elements
+    const fileInput = document.getElementById('fileInput');
+    const changeImageBtn = document.getElementById('changeImageBtn');
+    const uploadArea = document.getElementById('uploadArea');
+    const imageContainer = document.getElementById('imageContainer');
+    const newDesignBtn = document.getElementById('newDesignBtn');
 
-    // Sụ kiện thay đổi cấu hình
-    [posX, posY, longPosX, longPosY, fontFamily, textColor, bgColor, strokeColor, fontWeight]
-        .forEach(el => el && el.addEventListener('input', updateName));
+    // CSRF
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    // Cập nhật tên hiển thị
-    function updateName() {
-        if (!currentName) {
-            bg.style.display = 'none';
-            text.style.display = 'none';
-            return;
-        }
+    // === HỖ TRỢ ẢNH HIGH-RES ===
+    window.currentFullResImageUrl = null;
 
-        bg.style.display = 'block';
-        text.style.display = 'block';
+    async function loadImageForEditor(fullUrl) {
+        if (!fullUrl) return;
 
-        const upper = currentName.toUpperCase();
+        window.currentFullResImageUrl = fullUrl;
 
-        text.innerHTML = '';
-        text.setAttribute('font-size', baseFontSize);
-        text.setAttribute('font-weight', fontWeight.value);
-        text.setAttribute('font-family', fontFamily.value);
-        text.setAttribute('fill', textColor.value);
-        text.setAttribute('text-anchor', 'middle');
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
 
-        // Sử dụng giá trị từ range sliders
-        const isShort = upper.length <= SHORT_LIMIT;
-        const baseX = isShort ? parseInt(posX.value) : parseInt(longPosX.value);
-        const baseY = isShort ? parseInt(posY.value) : parseInt(longPosY.value);
-
-        // Chia thành nhiều dòng
-        const lines = [];
-        for (let i = 0; i < upper.length; i += MAX_PER_LINE) {
-            lines.push(upper.slice(i, i + MAX_PER_LINE));
-        }
-
-        lines.forEach((line, i) => {
-            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-            tspan.textContent = line;
-            tspan.setAttribute('x', baseX);
-            if (i === 0) tspan.setAttribute('y', 0);
-            else tspan.setAttribute('dy', '1.15em');
-            text.appendChild(tspan);
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = fullUrl;
         });
 
-        requestAnimationFrame(() => {
-            let size = baseFontSize;
-            let box = text.getBBox();
+        const MAX_EDIT_SIZE = 2000;
+        let { naturalWidth: w, naturalHeight: h } = img;
 
-            while (box.width + paddingX * 2 > maxPatchWidth && size > minFontSize) {
-                size--;
-                text.setAttribute('font-size', size);
-                box = text.getBBox();
+        if (w <= MAX_EDIT_SIZE && h <= MAX_EDIT_SIZE) {
+            baseImage.src = fullUrl;
+        } else {
+            const ratio = Math.min(MAX_EDIT_SIZE / w, MAX_EDIT_SIZE / h);
+            const newW = Math.floor(w * ratio);
+            const newH = Math.floor(h * ratio);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = newW;
+            canvas.height = newH;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, newW, newH);
+
+            const resizedDataURL = canvas.toDataURL('image/jpeg', 0.92);
+            baseImage.src = resizedDataURL;
+        }
+
+        baseImage.onload = () => {
+            updateSVGViewBox();
+            updateName();
+        };
+    }
+
+    // Sync font size
+    if (fontSize && fontSizeInput) {
+        // Hàm hỗ trợ: thêm option mới nếu chưa có
+        function addFontSizeOption(value) {
+            if (!value) return;
+            const val = String(value);
+            if (!fontSize.querySelector(`option[value="${val}"]`)) {
+                const option = document.createElement('option');
+                option.value = val;
+                option.textContent = val;
+                fontSize.appendChild(option);
             }
+        }
 
-            const patchWidth = box.width + paddingX * 2;
-            const patchHeight = box.height + paddingY * 2;
+        // 1. Chọn từ "Chọn nhanh"
+        fontSize.addEventListener('change', () => {
+            if (fontSize.value) {
+                fontSizeInput.value = fontSize.value;
+                updateName();
+                saveDesign();
+            }
+        });
 
-            // Sử dụng baseY từ range slider
-            bg.setAttribute('x', baseX - patchWidth / 2);
-            bg.setAttribute('y', baseY);
-            bg.setAttribute('width', patchWidth);
-            bg.setAttribute('height', patchHeight);
-            bg.setAttribute('fill', bgColor.value);
-            bg.setAttribute('stroke', strokeColor.value);
+        // 2. Gõ tay vào input → đồng bộ lên select
+        fontSizeInput.addEventListener('input', () => {
+            const val = fontSizeInput.value.trim();
+            if (val) {
+                addFontSizeOption(val);
+                fontSize.value = val;
+            } else {
+                fontSize.value = '';
+            }
+        });
 
-            const textY = baseY + paddingY - box.y;
-            text.querySelector('tspan')?.setAttribute('y', textY);
+        // 3. Khi blur hoặc Enter → validate và giữ hiển thị trên select
+        fontSizeInput.addEventListener('blur', () => {
+            let val = parseInt(fontSizeInput.value);
+            if (isNaN(val) || val < 10) val = 80;
+            if (val > 500) val = 500;
+
+            fontSizeInput.value = val;
+
+            // Thêm option nếu chưa có và hiển thị lên select
+            addFontSizeOption(val);
+            fontSize.value = val;
+
+            updateName();
+            saveDesign();
+        });
+
+        fontSizeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                fontSizeInput.blur();
+            }
+        });
+    }
+    // Load saved design from localStorage
+    function loadSavedDesign() {
+        try {
+            const saved = localStorage.getItem('currentDesign');
+            if (saved) {
+                const design = JSON.parse(saved);
+                
+                currentName = design.name || '';
+                if (nameInput) nameInput.value = currentName;
+
+                window.currentTextX = design.textX || 0;
+                window.currentTextY = design.textY || 0;
+                window.currentPatchWidth = design.patchWidth || 0;
+                window.currentPatchHeight = design.patchHeight || 0;
+
+                if (design.fontFamily && fontFamily) fontFamily.value = design.fontFamily;
+                if (design.fontSize) {
+                    if (fontSizeInput) fontSizeInput.value = design.fontSize;
+                    if (fontSize) fontSize.value = design.fontSize;
+                }
+                if (design.textColor && textColor) textColor.value = design.textColor;
+                if (design.bgColor && bgColor) bgColor.value = design.bgColor;
+                if (design.strokeColor && strokeColor) strokeColor.value = design.strokeColor;
+
+                isBold = design.isBold || false;
+                isItalic = design.isItalic || false;
+                isUnderline = design.isUnderline || false;
+
+                if (btnBold) btnBold.classList.toggle('active', isBold);
+                if (btnItalic) btnItalic.classList.toggle('active', isItalic);
+                if (btnUnderline) btnUnderline.classList.toggle('active', isUnderline);
+
+                if (design.imageDataUrl) {
+                    baseImage.src = design.imageDataUrl;
+                    baseImage.onload = () => {
+                        updateSVGViewBox();
+                        setTimeout(() => updateName(), 100);
+                    };
+                    if (uploadArea) uploadArea.style.display = 'none';
+                    if (imageContainer) imageContainer.style.display = 'block';
+                    if (changeImageBtn) changeImageBtn.classList.add('active');
+                }
+            }
+        } catch (e) {
+            console.error('Error loading saved design:', e);
+        }
+    }
+
+    function saveDesign() {
+        try {
+            const design = {
+                name: currentName,
+                textX: window.currentTextX,
+                textY: window.currentTextY,
+                patchWidth: window.currentPatchWidth,
+                patchHeight: window.currentPatchHeight,
+                fontFamily: fontFamily?.value || 'Arial, sans-serif',
+                fontSize: parseInt(fontSizeInput?.value || fontSize?.value || 80),
+                textColor: textColor?.value || '#dec27a',
+                bgColor: bgColor?.value || '#565559',
+                strokeColor: strokeColor?.value || '#dec27a',
+                fontWeight: isBold ? 'bold' : 'normal',
+                fontStyle: isItalic ? 'italic' : 'normal',
+                textDecoration: isUnderline ? 'underline' : 'none',
+                isBold, isItalic, isUnderline,
+                imageDataUrl: baseImage.src
+            };
+            localStorage.setItem('currentDesign', JSON.stringify(design));
+        } catch (e) {
+            console.error('Error saving design:', e);
+        }
+    }
+
+    if (newDesignBtn) {
+        newDesignBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentDesign');
+            window.currentDesignId = null;
+            window.currentBaseImage = null;
+            window.currentFullResImageUrl = null;
+
+            currentName = '';
+            if (nameInput) nameInput.value = '';
+
+            const url = new URL(window.location);
+            url.searchParams.delete('name');
+            window.history.replaceState({}, '', url);
+
+            window.currentTextX = 0;
+            window.currentTextY = 0;
+            window.currentPatchWidth = 0;
+            window.currentPatchHeight = 0;
+
+            if (fontSizeInput) fontSizeInput.value = '80';
+            if (fontFamily) fontFamily.value = 'Arial, sans-serif';
+            if (textColor) textColor.value = '#dec27a';
+            if (bgColor) bgColor.value = '#565559';
+            if (strokeColor) strokeColor.value = '#dec27a';
+
+            isBold = isItalic = isUnderline = false;
+            if (btnBold) btnBold.classList.remove('active');
+            if (btnItalic) btnItalic.classList.remove('active');
+            if (btnUnderline) btnUnderline.classList.remove('active');
+
+            if (uploadArea) uploadArea.style.display = 'flex';
+            if (imageContainer) imageContainer.style.display = 'none';
+            if (changeImageBtn) changeImageBtn.classList.remove('active');
+            baseImage.src = '';
+
+            if (bg) bg.style.display = 'none';
+            if (text) text.style.display = 'none';
+
+            setTimeout(() => {
+                const event = new CustomEvent('designsNeedReload');
+                document.dispatchEvent(event);
+            }, 100);
+
+            if (window.showToast) window.showToast('Đã tạo thiết kế mới', 'success');
         });
     }
 
-    updateName();
+    function updateSVGViewBox() {
+        if (!svg || !baseImage || !baseImage.complete || !baseImage.naturalWidth) return;
+
+        const imgWidth = baseImage.naturalWidth || baseImage.width;
+        const imgHeight = baseImage.naturalHeight || baseImage.height;
+
+        svg.setAttribute('viewBox', `0 0 ${imgWidth} ${imgHeight}`);
+        svg.setAttribute('width', imgWidth);
+        svg.setAttribute('height', imgHeight);
+
+        if (window.currentTextX === 0 && window.currentTextY === 0) {
+            window.currentTextX = imgWidth / 2;
+            window.currentTextY = imgHeight / 2;
+        }
+
+        updateName();
+    }
+
+    if (baseImage) {
+        baseImage.addEventListener('load', () => {
+            updateSVGViewBox();
+            updateName();
+        });
+    }
+
+    // File upload
+    if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file, file.name || 'design.png');
+
+                const uploadRes = await fetch('/upload-image', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                    body: formData
+                });
+
+                if (!uploadRes.ok) throw new Error('Upload thất bại');
+
+                const uploadData = await uploadRes.json();
+                const fullImageUrl = '/' + uploadData.path.replace(/^\/+/, '');
+
+                await loadImageForEditor(fullImageUrl);
+
+                // UI cập nhật
+                if (uploadArea) uploadArea.style.display = 'none';
+                if (imageContainer) imageContainer.style.display = 'block';
+                if (changeImageBtn) changeImageBtn.classList.add('active');
+
+                currentName = '';
+                if (nameInput) nameInput.value = '';
+                window.currentTextX = 0;
+                window.currentTextY = 0;
+
+                saveDesign();
+
+                if (window.showToast) window.showToast('Đã tải ảnh mới!', 'success');
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast('Upload ảnh thất bại', 'error');
+            }
+        });
+    }
+
+    if (changeImageBtn) {
+        changeImageBtn.addEventListener('click', () => fileInput?.click());
+    }
+
+    // Drag & drop upload area
+    if (uploadArea) {
+        uploadArea.addEventListener('click', () => fileInput?.click());
+
+        uploadArea.addEventListener('dragover', (e) => e.preventDefault());
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file, file.name || 'design.png');
+
+                const uploadRes = await fetch('/upload-image', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                    body: formData
+                });
+
+                if (!uploadRes.ok) throw new Error('Upload thất bại');
+
+                const uploadData = await uploadRes.json();
+                const fullImageUrl = '/' + uploadData.path.replace(/^\/+/, '');
+
+                await loadImageForEditor(fullImageUrl);
+
+                if (uploadArea) uploadArea.style.display = 'none';
+                if (imageContainer) imageContainer.style.display = 'block';
+                if (changeImageBtn) changeImageBtn.classList.add('active');
+
+                currentName = '';
+                if (nameInput) nameInput.value = '';
+                window.currentTextX = 0;
+                window.currentTextY = 0;
+
+                const url = new URL(window.location);
+                url.searchParams.delete('name');
+                window.history.replaceState({}, '', url);
+
+                if (bg) bg.style.display = 'none';
+                if (text) text.style.display = 'none';
+
+                saveDesign();
+
+                if (window.showToast) window.showToast('Đã tải ảnh mới!', 'success');
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast('Upload ảnh thất bại', 'error');
+            }
+        });
+    }
+
+    // Format buttons
+    if (btnBold) {
+        btnBold.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isBold = !isBold;
+            btnBold.classList.toggle('active', isBold);
+            updateName();
+            saveDesign();
+        });
+    }
+
+    if (btnItalic) {
+        btnItalic.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isItalic = !isItalic;
+            btnItalic.classList.toggle('active', isItalic);
+            updateName();
+            saveDesign();
+        });
+    }
+
+    if (btnUnderline) {
+        btnUnderline.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isUnderline = !isUnderline;
+            btnUnderline.classList.toggle('active', isUnderline);
+            updateName();
+            saveDesign();
+        });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === 'b' || e.key === 'B') {
+                e.preventDefault();
+                btnBold?.click();
+            } else if (e.key === 'i' || e.key === 'I') {
+                e.preventDefault();
+                btnItalic?.click();
+            } else if (e.key === 'u' || e.key === 'U') {
+                e.preventDefault();
+                btnUnderline?.click();
+            }
+        }
+    });
+
+    // Config changes
+    [fontFamily, fontSize].forEach(el => {
+        if (el) el.addEventListener('change', () => { updateName(); saveDesign(); });
+    });
+    
+    [textColor].forEach(el => {
+        if (el) el.addEventListener('input', () => { updateName(); saveDesign(); });
+    });
+
+    if (bgColor) {
+        bgColor.addEventListener('input', () => {
+            hasSetupBg = true; // Đánh dấu đã tự chọn màu nền
+            updateName();
+            saveDesign();
+        });
+        bgColor.addEventListener('change', () => {
+            hasSetupBg = true;
+            updateName();
+            saveDesign();
+        });
+    }
+
+    if (strokeColor) {
+        strokeColor.addEventListener('input', () => {
+            hasSetupStroke = true; // Đánh dấu đã tự chọn màu viền
+            updateName();
+            saveDesign();
+        });
+        strokeColor.addEventListener('change', () => {
+            hasSetupStroke = true;
+            updateName();
+            saveDesign();
+        });
+    }
+
+    // Kéo thả patch
+    let dragStartX = 0;
+    let dragStartY = 0;
+    
+    if (bg) {
+        bg.style.cursor = 'move';
+        bg.style.pointerEvents = 'all';
+        
+        bg.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            isDragging = true;
+            
+            const svgRect = svg.getBoundingClientRect();
+            const imgWidth = baseImage.naturalWidth || baseImage.width;
+            const imgHeight = baseImage.naturalHeight || baseImage.height;
+            
+            const scaleX = imgWidth / svgRect.width;
+            const scaleY = imgHeight / svgRect.height;
+            
+            dragStartX = (e.clientX - svgRect.left) * scaleX - window.currentTextX;
+            dragStartY = (e.clientY - svgRect.top) * scaleY - window.currentTextY;
+            
+            bg.style.cursor = 'grabbing';
+        });
+    }
+
+    if (text) {
+        text.style.cursor = 'move';
+        text.style.pointerEvents = 'all';
+        
+        text.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            isDragging = true;
+            
+            const svgRect = svg.getBoundingClientRect();
+            const imgWidth = baseImage.naturalWidth || baseImage.width;
+            const imgHeight = baseImage.naturalHeight || baseImage.height;
+            
+            const scaleX = imgWidth / svgRect.width;
+            const scaleY = imgHeight / svgRect.height;
+            
+            dragStartX = (e.clientX - svgRect.left) * scaleX - window.currentTextX;
+            dragStartY = (e.clientY - svgRect.top) * scaleY - window.currentTextY;
+            
+            text.style.cursor = 'grabbing';
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        e.preventDefault();
+        
+        const svgRect = svg.getBoundingClientRect();
+        const imgWidth = baseImage.naturalWidth || baseImage.width;
+        const imgHeight = baseImage.naturalHeight || baseImage.height;
+        
+        const scaleX = imgWidth / svgRect.width;
+        const scaleY = imgHeight / svgRect.height;
+        
+        window.currentTextX = (e.clientX - svgRect.left) * scaleX - dragStartX;
+        window.currentTextY = (e.clientY - svgRect.top) * scaleY - dragStartY;
+        
+        window.currentTextX = Math.max(0, Math.min(imgWidth, window.currentTextX));
+        window.currentTextY = Math.max(0, Math.min(imgHeight, window.currentTextY));
+        
+        updateName();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            if (bg) bg.style.cursor = 'move';
+            if (text) text.style.cursor = 'move';
+            saveDesign();
+        }
+    });
+
+    function updateName() {
+        if (!text || !bg || !baseImage) return;
+
+        const hasText = currentName && currentName.trim() !== '';
+
+        if (!hasText) {
+            text.style.display = 'none';
+            bg.style.display = 'none';
+            return;
+        }
+
+        // Luôn hiện text khi có nội dung
+        text.style.display = 'block';
+
+        const imgWidth = baseImage.naturalWidth || baseImage.width;
+        const imgHeight = baseImage.naturalHeight || baseImage.height;
+
+        if (imgWidth === 0 || imgHeight === 0) return;
+
+        // Đặt vị trí center nếu chưa có
+        if (window.currentTextX === 0 && window.currentTextY === 0) {
+            window.currentTextX = imgWidth / 2;
+            window.currentTextY = imgHeight / 2;
+        }
+
+        text.innerHTML = '';
+
+        const currentFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
+
+        text.setAttribute('font-size', currentFontSize);
+        text.setAttribute('font-weight', isBold ? 'bold' : 'normal');
+        text.setAttribute('font-style', isItalic ? 'italic' : 'normal');
+        text.setAttribute('font-family', fontFamily.value);
+        text.setAttribute('fill', textColor.value);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('y', window.currentTextY);
+
+        const lines = currentName.split('\n');
+
+        lines.forEach((line, i) => {
+            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+            tspan.textContent = line.toUpperCase();
+            tspan.setAttribute('x', window.currentTextX);
+            
+            if (isUnderline) {
+                tspan.setAttribute('text-decoration', 'underline');
+            }
+            
+            if (i > 0) {
+                tspan.setAttribute('dy', '1.15em');
+            }
+            
+            text.appendChild(tspan);
+        });
+
+        if (hasSetupBg) {
+            bg.style.display = 'block';
+
+            // Tính kích thước patch dựa trên text
+            requestAnimationFrame(() => {
+                let box;
+                try {
+                    box = text.getBBox();
+                } catch (e) {
+                    return;
+                }
+
+                const scaleFactor = imgWidth / 11417;
+                const scaledPaddingX = paddingX * scaleFactor;
+                const scaledPaddingY = paddingY * scaleFactor;
+
+                const patchWidth = box.width + scaledPaddingX * 2;
+                const patchHeight = box.height + scaledPaddingY * 2;
+
+                window.currentPatchWidth = patchWidth;
+                window.currentPatchHeight = patchHeight;
+
+                const patchX = window.currentTextX - patchWidth / 2;
+                const patchY = window.currentTextY - patchHeight / 2;
+
+                bg.setAttribute('x', patchX);
+                bg.setAttribute('y', patchY);
+                bg.setAttribute('width', patchWidth);
+                bg.setAttribute('height', patchHeight);
+                bg.setAttribute('fill', bgColor.value);
+
+                // Viền chỉ hiện nếu người dùng đã tự chọn màu viền
+                if (hasSetupStroke) {
+                    bg.setAttribute('stroke', strokeColor.value);
+                    bg.setAttribute('stroke-width', 12 * scaleFactor);
+                } else {
+                    bg.removeAttribute('stroke');
+                    bg.removeAttribute('stroke-width');
+                }
+            });
+        } else {
+            // Chưa setup màu nền → ẩn hoàn toàn patch
+            bg.style.display = 'none';
+        }
+
+        saveDesign();
+    }
+    // Inline edit
+    let isEditingInline = false;
+
+    if (text) {
+        text.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isEditingInline) return;
+            startInlineEdit();
+        });
+    }
+
+    if (bg) {
+        bg.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isEditingInline) return;
+            startInlineEdit();
+        });
+    }
+
+    function startInlineEdit() {
+        isEditingInline = true;
+        isDragging = false;
+        
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        fo.setAttribute('id', 'inlineEditFO');
+        
+        const imgWidth = baseImage.naturalWidth || baseImage.width;
+        const imgHeight = baseImage.naturalHeight || baseImage.height;
+        
+        fo.setAttribute('x', '0');
+        fo.setAttribute('y', '0');
+        fo.setAttribute('width', imgWidth);
+        fo.setAttribute('height', imgHeight);
+        
+        const container = document.createElement('div');
+        container.id = 'editContainer';
+        container.style.cssText = `
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        `;
+        
+        const textarea = document.createElement('textarea');
+        textarea.id = 'svgTextarea';
+        
+        const currentFontSize = parseInt(fontSize.value || 80);
+        const patchX = parseFloat(bg.getAttribute('x') || 0);
+        const patchY = parseFloat(bg.getAttribute('y') || 0);
+        const patchWidth = parseFloat(bg.getAttribute('width') || 400);
+        const patchHeight = parseFloat(bg.getAttribute('height') || 100);
+        
+        textarea.style.cssText = `
+            position: absolute;
+            left: ${patchX}px;
+            top: ${patchY}px;
+            width: ${patchWidth}px;
+            min-height: ${patchHeight}px;
+            background: transparent;
+            border: 2px dashed rgba(0, 103, 184, 0.5);
+            outline: none;
+            color: ${textColor.value};
+            font-family: ${fontFamily.value};
+            font-size: ${currentFontSize}px;
+            font-weight: ${isBold ? 'bold' : 'normal'};
+            font-style: ${isItalic ? 'italic' : 'normal'};
+            text-decoration: ${isUnderline ? 'underline' : 'none'};
+            text-align: center;
+            padding: 20px 40px;
+            resize: none;
+            overflow: hidden;
+            text-transform: uppercase;
+            line-height: 1.15;
+            cursor: text;
+            box-sizing: border-box;
+            pointer-events: all;
+        `;
+        
+        textarea.value = currentName;
+        if (text) text.style.display = 'none';
+        
+        let updateTimeout = null;
+        textarea.addEventListener('input', () => {
+            currentName = textarea.value;
+            if (nameInput) nameInput.value = currentName;
+            
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                updatePatchSizeAndPosition(textarea);
+            }, 50);
+        });
+        
+        textarea.addEventListener('blur', () => {
+            finishInlineEdit();
+        });
+        
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                finishInlineEdit();
+            }
+            if (e.key === 'Enter') {
+                setTimeout(() => updatePatchSizeAndPosition(textarea), 10);
+            }
+        });
+        
+        container.appendChild(textarea);
+        fo.appendChild(container);
+        svg.appendChild(fo);
+        
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            updatePatchSizeAndPosition(textarea);
+        }, 50);
+    }
+
+    function updatePatchSizeAndPosition(textarea) {
+        if (!bg || !textarea) return;
+        
+        const currentFontSize = parseInt(fontSize.value || 80);
+        const lineHeight = currentFontSize * 1.15;
+        const lines = textarea.value.split('\n');
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${isBold ? 'bold' : 'normal'} ${currentFontSize}px ${fontFamily.value}`;
+        
+        let maxWidth = currentFontSize * 3;
+        lines.forEach(line => {
+            if (line.trim() !== '') {
+                const width = ctx.measureText(line.toUpperCase()).width;
+                if (width > maxWidth) maxWidth = width;
+            }
+        });
+        
+        const imgWidth = baseImage.naturalWidth || baseImage.width;
+        const scaleFactor = imgWidth / 11417;
+        const scaledPaddingX = 60 * scaleFactor;
+        const scaledPaddingY = 30 * scaleFactor;
+        
+        const newPatchWidth = maxWidth + scaledPaddingX * 2;
+        const newPatchHeight = Math.max(lines.length, 1) * lineHeight + scaledPaddingY * 2;
+        
+        window.currentPatchWidth = newPatchWidth;
+        window.currentPatchHeight = newPatchHeight;
+        
+        const patchX = window.currentTextX - newPatchWidth / 2;
+        const patchY = window.currentTextY - newPatchHeight / 2;
+        
+        bg.setAttribute('x', patchX);
+        bg.setAttribute('y', patchY);
+        bg.setAttribute('width', newPatchWidth);
+        bg.setAttribute('height', newPatchHeight);
+        
+        textarea.style.left = patchX + 'px';
+        textarea.style.top = patchY + 'px';
+        textarea.style.width = newPatchWidth + 'px';
+        textarea.style.minHeight = newPatchHeight + 'px';
+        
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(newPatchHeight, textarea.scrollHeight) + 'px';
+    }
+
+    function finishInlineEdit() {
+        if (!isEditingInline) return;
+        
+        isEditingInline = false;
+        
+        const fo = document.getElementById('inlineEditFO');
+        if (fo) fo.remove();
+        
+        if (text) text.style.display = 'block';
+        
+        updateName();
+        
+        const url = new URL(window.location);
+        if (currentName) {
+            url.searchParams.set('name', currentName);
+        } else {
+            url.searchParams.delete('name');
+        }
+        window.history.replaceState({}, '', url);
+        
+        saveDesign();
+    }
+
+    // Panel
+    const savedDesigns  = document.querySelector('.saved-designs');
+    const leftPanel     = document.querySelector('.left-panel');
+    const contentWrap   = document.getElementById('contentWrapper');
+    const panelCloseBtn = document.getElementById('panelCloseBtn');
+
+    const toolButtons = document.querySelectorAll('.tool-btn');
+    const panels      = document.querySelectorAll('.panel-content');
+
+    let currentPanelId = document.querySelector('.tool-btn.active')?.dataset.target || 'menuSaved';
+
+    function openPanel(targetId) {
+        if (!targetId) return;
+
+        currentPanelId = targetId;
+
+        savedDesigns.classList.remove('panel-closed');
+        leftPanel.classList.remove('collapsed');
+        contentWrap.classList.remove('panel-closed');
+
+        toolButtons.forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.querySelector(`.tool-btn[data-target="${targetId}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        panels.forEach(panel => {
+            panel.classList.remove('active');
+            panel.style.display = 'none';
+        });
+        
+        const targetPanel = document.getElementById(targetId);
+        if (targetPanel) {
+            targetPanel.classList.add('active');
+            targetPanel.style.display = 'flex';
+        }
+
+        if (panelCloseBtn) {
+            panelCloseBtn.innerHTML = "<i class='bx bx-left-arrow-alt'></i>";
+            panelCloseBtn.classList.remove('closed');
+        }
+    }
+
+    function closePanel() {
+        savedDesigns.classList.add('panel-closed');
+        leftPanel.classList.add('collapsed');
+        contentWrap.classList.add('panel-closed');
+        
+        if (panelCloseBtn) {
+            panelCloseBtn.innerHTML = "<i class='bx bx-right-arrow-alt'></i>";
+            panelCloseBtn.classList.add('closed');
+        }
+    }
+
+    function togglePanel() {
+        const isClosed = savedDesigns.classList.contains('panel-closed');
+        if (isClosed) {
+            openPanel(currentPanelId);
+        } else {
+            closePanel();
+        }
+    }
+
+    document.querySelector('.left-toolbar').addEventListener('click', (e) => {
+        const toolBtn = e.target.closest('.tool-btn');
+        if (toolBtn && !toolBtn.classList.contains('active')) {
+            const target = toolBtn.dataset.target;
+            if (target) openPanel(target);
+        }
+    });
+
+    if (panelCloseBtn) {
+        panelCloseBtn.addEventListener('click', togglePanel);
+    }
+
+    document.querySelectorAll('.left-panel input, .left-panel select, .left-panel textarea, .left-panel button')
+        .forEach(el => {
+            el.addEventListener('click', e => e.stopPropagation());
+            el.addEventListener('mousedown', e => e.stopPropagation());
+        });
+
+    openPanel(currentPanelId);
+    
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768) {
+            closePanel();
+        } else {
+            openPanel(currentPanelId);
+        }
+    });
+    
+    if (window.innerWidth <= 768) {
+        closePanel();
+    }
 
     // Toast notification
     const toast = document.getElementById('toast');
@@ -146,28 +1000,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 10);
         }
 
-        toastTimer = setTimeout(hideToast, duration);
+        toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, duration);
     };
 
-    function hideToast() {
-        toast?.classList.remove('show');
-        if (toastTimer) clearTimeout(toastTimer);
-    }
+    if (toastClose) toastClose.addEventListener('click', () => toast.classList.remove('show'));
 
-    toastClose?.addEventListener('click', hideToast);
-
-    // thông báo xác nhận xóa 
+    // Confirm modal
     const confirmModal = document.getElementById('confirmModal');
     const confirmCancel = document.getElementById('confirmCancel');
-    const confirmDelete  = document.getElementById('confirmDelete');
+    const confirmDelete = document.getElementById('confirmDelete');
 
     let deleteCallback = null;
 
     window.showConfirm = function (message, onConfirm) {
-        if (!confirmModal) {
-            console.error('confirmModal not found');
-            return;
-        }
+        if (!confirmModal) return;
 
         const msgEl = confirmModal.querySelector('p');
         if (msgEl) msgEl.textContent = message;
@@ -181,188 +1029,69 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteCallback = null;
     }
 
-    confirmCancel?.addEventListener('click', hideConfirm);
-
-    confirmDelete?.addEventListener('click', () => {
-        if (typeof deleteCallback === 'function') {
-            deleteCallback();
-        }
+    if (confirmCancel) confirmCancel.addEventListener('click', hideConfirm);
+    if (confirmDelete) confirmDelete.addEventListener('click', () => {
+        if (typeof deleteCallback === 'function') deleteCallback();
         hideConfirm();
     });
 
-    confirmModal?.addEventListener('click', (e) => {
-        if (e.target === confirmModal) {
-            hideConfirm();
-        }
+    if (confirmModal) confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) hideConfirm();
     });
 
-    // Dropdown menus
-    const menuText = document.getElementById('menuText');
-    const menuPositionShort = document.getElementById('menuPositionShort');
-    const menuPositionLong = document.getElementById('menuPositionLong');
-    const menuFont = document.getElementById('menuFont');
-    const menuColors = document.getElementById('menuColors');
-
-    const dropdownText = document.getElementById('dropdownText');
-    const dropdownShort = document.getElementById('dropdownShort');
-    const dropdownLong = document.getElementById('dropdownLong');
-    const dropdownFont = document.getElementById('dropdownFont');
-    const dropdownColors = document.getElementById('dropdownColors');
-
-    function closeAllDropdowns() {
-        [dropdownText, dropdownShort, dropdownLong, dropdownFont, dropdownColors].forEach(d => {
-            if (d) d.classList.remove('show');
-        });
-        [menuText, menuPositionShort, menuPositionLong, menuFont, menuColors].forEach(m => {
-            if (m) m.classList.remove('active');
-        });
-    }
-
-    [dropdownText, dropdownShort, dropdownLong, dropdownFont, dropdownColors].forEach(dropdown => {
-        if (dropdown) {
-            dropdown.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
+    // Khởi tạo
+    localStorage.removeItem('currentDesign');
+    loadSavedDesign();
+    
+    setTimeout(() => {
+        if (svg && baseImage && baseImage.src) {
+            updateSVGViewBox();
+            setTimeout(() => updateName(), 100);
         }
-    });
+    }, 100);
 
-    // Mở menu con
-    if (menuText) {
-        menuText.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdownText?.classList.contains('show');
-            closeAllDropdowns();
-            if (!isOpen && dropdownText) {
-                dropdownText.classList.add('show');
-                menuText.classList.add('active');
-            }
-        });
-    }
-
-    if (menuPositionShort) {
-        menuPositionShort.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdownShort?.classList.contains('show');
-            closeAllDropdowns();
-            if (!isOpen && dropdownShort) {
-                dropdownShort.classList.add('show');
-                menuPositionShort.classList.add('active');
-            }
-        });
-    }
-
-    if (menuPositionLong) {
-        menuPositionLong.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdownLong?.classList.contains('show');
-            closeAllDropdowns();
-            if (!isOpen && dropdownLong) {
-                dropdownLong.classList.add('show');
-                menuPositionLong.classList.add('active');
-            }
-        });
-    }
-
-    if (menuFont) {
-        menuFont.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdownFont?.classList.contains('show');
-            closeAllDropdowns();
-            if (!isOpen && dropdownFont) {
-                dropdownFont.classList.add('show');
-                menuFont.classList.add('active');
-            }
-        });
-    }
-
-    if (menuColors) {
-        menuColors.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdownColors?.classList.contains('show');
-            closeAllDropdowns();
-            if (!isOpen && dropdownColors) {
-                dropdownColors.classList.add('show');
-                menuColors.classList.add('active');
-            }
-        });
-    }
-
-    // Đóng menu con khi nhấn Enter trong input
-    if (nameInput) {
-        nameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                closeAllDropdowns();
-                nameInput.blur();
-            }
-        });
-    }
-
-    // Đóng menu con khi click ra ngoài
-    document.addEventListener('click', (e) => {
-        const clickedInsideMenu = e.target.closest('.menu-item') || e.target.closest('.dropdown-menu');
-        if (!clickedInsideMenu) {
-            closeAllDropdowns();
-        }
-    });
-
-    // Cập nhật giá trị hiển thị của sliders
-    if (posX) posX.oninput = () => {
-        const val = document.getElementById('posXValue');
-        if (val) val.textContent = posX.value;
+    // Expose functions cho export.js
+    window.updateName = updateName;
+    window.updateSVGViewBox = updateSVGViewBox;
+    window.loadSavedDesign = loadSavedDesign;
+    window.resetToUploadGrid = function() {
+        if (uploadArea) uploadArea.style.display = 'flex';
+        if (imageContainer) imageContainer.style.display = 'none';
+        if (changeImageBtn) changeImageBtn.classList.remove('active');
+        baseImage.src = '';
+        if (bg) bg.style.display = 'none';
+        if (text) text.style.display = 'none';
+        currentName = '';
+        if (nameInput) nameInput.value = '';
+        const url = new URL(window.location);
+        url.searchParams.delete('name');
+        window.history.replaceState({}, '', url);
+        localStorage.removeItem('currentDesign');
     };
-    if (posY) posY.oninput = () => {
-        const val = document.getElementById('posYValue');
-        if (val) val.textContent = posY.value;
-    };
-    if (longPosX) longPosX.oninput = () => {
-        const val = document.getElementById('longPosXValue');
-        if (val) val.textContent = longPosX.value;
-    };
-    if (longPosY) longPosY.oninput = () => {
-        const val = document.getElementById('longPosYValue');
-        if (val) val.textContent = longPosY.value;
-    };
-    if (fontWeight) fontWeight.oninput = () => {
-        const val = document.getElementById('fontWeightValue');
-        if (val) val.textContent = fontWeight.value;
+    
+    window.getExportConfig = function() {
+        const currentFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
+        return {
+            text: currentName,
+            x: window.currentTextX,
+            y: window.currentTextY,
+            patchWidth: window.currentPatchWidth,
+            patchHeight: window.currentPatchHeight,
+            fontFamily: fontFamily.value,
+            fontSize: currentFontSize,
+            fontWeight: isBold ? 'bold' : 'normal',
+            fontStyle: isItalic ? 'italic' : 'normal',
+            textDecoration: isUnderline ? 'underline' : 'none',
+            textColor: textColor.value,
+            bgColor: bgColor.value,
+            strokeColor: strokeColor.value
+        };
     };
 
-    // Áp dụng cấu hình vào SVG
-    function applyConfigToSVG(cfg) {
-        const rect = document.getElementById('nameBg');
-        const text = document.getElementById('printName');
+    window.updateBoldState = (value) => isBold = value;
+    window.updateItalicState = (value) => isItalic = value;
+    window.updateUnderlineState = (value) => isUnderline = value;
 
-        // Patch
-        rect.setAttribute('x', cfg.x - cfg.patchWidth / 2);
-        rect.setAttribute('y', cfg.y - cfg.patchHeight / 2);
-        rect.setAttribute('width', cfg.patchWidth);
-        rect.setAttribute('height', cfg.patchHeight);
-        rect.setAttribute('fill', cfg.bgColor);
-        rect.setAttribute('stroke', cfg.strokeColor);
-
-        // Text
-        text.textContent = cfg.text;
-        text.setAttribute('x', cfg.x);
-        text.setAttribute('y', cfg.y);
-        text.setAttribute('fill', cfg.textColor);
-        text.setAttribute('font-size', cfg.fontSize);
-
-        // Nếu có input name → sync lại
-        const nameInput = document.getElementById('printNameInput');
-        if (nameInput) {
-            nameInput.value = cfg.text;
-        }
-    }
-
-    // Định dạng ngày tháng
-    function formatDate(date) {
-        if (!date) return '';
-        return new Date(date).toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    }
-
-    window.updateName = updateName; 
+    window.startInlineTextEdit = startInlineEdit;
+    window.finishInlineTextEdit = finishInlineEdit;
 });

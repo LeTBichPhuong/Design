@@ -9,11 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const tab = item.dataset.tab;
 
-            // Cập nhật trạng thái active của menu
             menuItems.forEach(m => m.classList.remove('active'));
             item.classList.add('active');
 
-            // Show/hide tabs
             if (tab === 'profile') {
                 profileTab.classList.add('active');
                 historyTab.classList.remove('active');
@@ -83,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lịch sử thiết kế
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    const STORAGE_URL = window.storageUrl || '/storage';
     const PLACEHOLDER = `/images/placeholder.png`;
 
     const designsGrid = document.getElementById('designsGrid');
@@ -95,6 +92,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let allDesigns = [];
     let currentFilter = 'all';
     let currentView = 'grid';
+
+    // FIX: Hàm lấy thumbnail CHÍNH XÁC giống export.js
+    function getThumbnailUrl(design) {
+        let imagePath = design.export_image || design.base_image;
+        
+        if (!imagePath) return PLACEHOLDER;
+        
+        if (imagePath.startsWith('data:') || imagePath.startsWith('http')) {
+            return imagePath;
+        }
+        
+        imagePath = imagePath.replace(/^\/+/, '');
+        
+        let filename = imagePath.split('/').pop();
+        filename = decodeURIComponent(filename);
+        return `/exports/${filename}`;
+    }
 
     // Load design history from server
     async function loadDesignHistory() {
@@ -112,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             allDesigns = await res.json();
-            console.log('Loaded designs:', allDesigns);
             
             updateStats(allDesigns);
             renderDesigns(applyFiltersAndSort(allDesigns));
@@ -121,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Load designs error:', e);
             showToast('Không thể tải lịch sử thiết kế', 'error');
             
-            // Show thông báo lỗi trong grid
             if (designsGrid) {
                 designsGrid.innerHTML = `
                     <div class="empty-designs">
@@ -184,17 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.className = `design-card ${currentView === 'list' ? 'list-view' : ''}`;
 
-        // Lấy URL hình ảnh
-        let imageUrl = PLACEHOLDER;
-        if (design.export_image) {
-            // Xử lý dấu '/' ở đầu đường dẫn
-            const imagePath = design.export_image.startsWith('/') 
-                ? design.export_image.substring(1) 
-                : design.export_image;
-            imageUrl = `${STORAGE_URL}/${imagePath}`;
-        }
-        
-        // Định dạng ngày tháng
         const date = new Date(design.created_at);
         const formattedDate = date.toLocaleDateString('vi-VN', {
             day: '2-digit',
@@ -206,16 +207,18 @@ document.addEventListener('DOMContentLoaded', () => {
             minute: '2-digit'
         });
 
-        // Kiểm tra thiết kế mới (trong 24 giờ)
         const isNew = (Date.now() - date.getTime()) < 24 * 60 * 60 * 1000;
+
+        // Ưu tiên export_image (đã có text), fallback về base_image
+        const thumbnailUrl = getThumbnailUrl(design);
 
         div.innerHTML = `
             <img 
-                src="${imageUrl}" 
+                src="${thumbnailUrl}" 
                 alt="${escapeHtml(design.name || 'Thiết kế')}"
                 class="design-thumbnail"
                 onerror="this.src='${PLACEHOLDER}'"
-                onclick="previewDesign('${escapeHtml(imageUrl)}', '${escapeHtml(design.name || 'Thiết kế')}')"
+                onclick="previewDesign('${thumbnailUrl}', '${escapeHtml(design.name || 'Thiết kế')}')"
             >
             <div class="design-info">
                 <div class="design-header">
@@ -233,14 +236,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 <div class="design-actions">
-                    <button class="btn-action btn-open" onclick="openDesign('${escapeHtml(design.name || '')}')">
+                    <button class="btn-action btn-open" onclick="openDesign(${design.id})">
                         <i class='bx bx-edit'></i> Mở
                     </button>
-                    ${design.export_image ? `
-                        <button class="btn-action btn-download" onclick="downloadDesign('${escapeHtml(imageUrl)}', '${escapeHtml(design.name || 'design')}')">
-                            <i class='bx bx-download'></i>
-                        </button>
-                    ` : ''}
+                    <button class="btn-action btn-download" onclick="downloadDesign(${design.id})">
+                        <i class='bx bx-download'></i>
+                    </button>
                     <button class="btn-action btn-delete" onclick="deleteDesign(${design.id})">
                         <i class='bx bx-trash'></i>
                     </button>
@@ -249,6 +250,19 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         return div;
+    }
+
+    function getFullExportUrl(design) {
+        if (design.export_image) {
+            let path = design.export_image.replace(/^\/+/, '');
+            if (path.includes('exports/')) {
+                let filename = path.split('/').pop();
+                filename = decodeURIComponent(filename);
+                return `/exports/${filename}`;
+            }
+            return '/' + path;
+        }
+        return PLACEHOLDER;
     }
 
     // Bảo vệ chống XSS
@@ -400,14 +414,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Hàm mở thiết kế trong trình chỉnh sửa
-    window.openDesign = function(name) {
-        if (name) {
-            window.location.href = `/?name=${encodeURIComponent(name)}`;
-        } else {
-            window.location.href = '/';
-        }
+    window.openDesign = function(designId) {
+        window.location.href = `/?name=${designId}`;
     };
-
+    
     // Xem trước thiết kế
     window.previewDesign = function(url, name) {
         const modal = document.getElementById('modalPreview');
@@ -415,22 +425,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalTitle = document.getElementById('modalTitle');
         
         if (modal && modalImage && modalTitle) {
+            modalTitle.textContent = name || 'Thiết kế';
             modalImage.src = url;
-            modalTitle.textContent = name;
+            modalImage.onerror = () => { modalImage.src = PLACEHOLDER; };
             modal.classList.add('show');
         }
     };
 
     // Tải xuống thiết kế
-    window.downloadDesign = function(url, name) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${name}_${Date.now()}.png`;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast('Đang tải xuống...', 'success');
+    window.downloadDesign = async function(designId) {
+        try {
+            showToast('Đang xuất ảnh...', 'info');
+
+            // Gọi backend xuất full-res
+            const res = await fetch(`/designs/${designId}/export`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+
+            if (!data.success || !data.url) {
+                throw new Error(data.message || 'Xuất ảnh thất bại');
+            }
+
+            // Tải về file full-res
+            const a = document.createElement('a');
+            a.href = data.url;
+            a.download = data.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Mở tab mới xem full-res
+            window.open(data.url, '_blank');
+
+            showToast('Đã xuất và tải xuống ảnh full chất lượng!', 'success');
+
+        } catch (e) {
+            console.error('Download error:', e);
+            showToast('Xuất ảnh thất bại: ' + e.message, 'error');
+        }
     };
 
     function showConfirm() {
@@ -485,6 +529,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Đưa hàm showToast ra ngoài để sử dụng toàn cục
     window.showToast = showToast;
 });

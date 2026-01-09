@@ -12,50 +12,196 @@ body {
     overflow: hidden;
 }
 
-/* Cột lưu trữ bên trái - full height */
+body.transforming {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Menu bên trái */
 .saved-designs {
-    width: 250px;
+    width: 320px;
     background: white;
-    color: #333;
     position: fixed;
     left: 0;
-    top: 0;
+    top: 60px;
     bottom: 0;
     z-index: 50;
     border-right: 1px solid #e0e0e0;
     display: flex;
-    flex-direction: column;
+    transition: width 0.3s ease;
 }
 
-.saved-designs h2 {
+.saved-designs.panel-closed {
+    width: 70px;
+}
+
+/* Left Toolbar */
+.left-toolbar {
+    width: 70px;
+    background: #f5f5f5;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10px;
+    flex-shrink: 0;
+}
+
+.tool-btn {
+    width: 100%;
+    padding: 12px 0;
+    text-align: center;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.2s;
+}
+
+.tool-btn i {
+    font-size: 22px;
+}
+
+.tool-btn span {
+    display: block;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+.tool-btn:hover,
+.tool-btn.active {
+    background: white;
+    color: #0067b8;
+    border-left: 3px solid #0067b8;
+}
+
+/* Left Panel */
+.left-panel {
+    flex: 1;
+    background: white;
+    overflow: visible;
+    transition: all 0.3s ease;
+}
+
+.left-panel.collapsed {
+    width: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Panel Content */
+.panel-content {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.panel-content.active {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.panel-content h2 {
     font-size: 18px;
-    margin: 0;
+    margin: 0 0 20px 0;
     padding: 15px;
     text-align: center;
     border-bottom: 2px solid #0067b8;
     color: #1a1a1a;
     background: white;
     flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
-/* Phần nội dung có scroll */
-.saved-content {
+/* Dropdown Menu trong Panel */
+.left-panel .dropdown-menu,
+.panel-content .dropdown-menu {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    display: block !important;
+    min-width: auto !important;
+}
+
+/* Panel Toggle Button */
+.panel-toggle-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #666;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.panel-toggle-btn:hover {
+    background: #0067b8;
+    color: white;
+    border-color: #0067b8;
+}
+
+.panel-toggle-btn.closed i {
+    transform: rotate(180deg);
+}
+
+/* Danh sách thiết kế đã lưu */
+#menuSaved {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+#menuSaved .saved-content {
     flex: 1;
     overflow-y: auto;
     padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+#savedList {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#savedList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#savedList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+#savedList::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+#savedList::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .saved-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px;
+    padding: 13px;
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.2s;
+    margin-bottom: 8px;
 }
 
 .saved-item:hover {
@@ -106,6 +252,13 @@ body {
     color: red;
 }
 
+.empty-state {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
 .btn-new-design {
     display: flex;
     align-items: center;
@@ -122,7 +275,14 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(222, 194, 122, 0.2);
     width: 100%;
-    margin-top: 10px;
+    margin-top: 15px;
+    margin-bottom: 40px;
+    flex-shrink: 0;
+}
+
+.btn-new-design:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(222, 194, 122, 0.3);
 }
 
 .btn-new-design:active {
@@ -140,75 +300,12 @@ body {
     letter-spacing: 0.3px;
 }
 
-/* Content wrapper - bên phải saved-designs */
-.content-wrapper {
-    margin-left: 250px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-/* Top Menu Bar */
-.top-menu {
-    background: white;
-    color: #333;
-    padding: 12px 20px;
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    z-index: 100;
-    flex-wrap: wrap;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.menu-item {
-    position: relative;
-    padding: 8px 16px;
-    background: #f5f5f5;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s;
-    user-select: none;
-    color: #333;
-}
-
-.menu-item:hover {
-    background: #e8f4fd;
-    border-color: #0067b8;
-}
-
-.menu-item.active {
-    background: #0067b8;
-    color: white;
-    border-color: #0067b8;
-}
-
-.menu-divider {
-    width: 1px;
-    height: 30px;
-    background: #e0e0e0;
-}
-
-.dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 8px;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    min-width: 320px;
-    padding: 15px;
-    display: none;
-    z-index: 1000;
-}
-
-.dropdown-menu.show {
-    display: block;
+/* Thanh icon dọc */
+#menuText,
+#menuFont,
+#menuColors {
+    overflow-y: auto;
+    padding: 0;
 }
 
 .dropdown-menu h4 {
@@ -221,6 +318,7 @@ body {
 
 .menu-input-group {
     margin-bottom: 10px;
+    padding: 0 20px;
 }
 
 .menu-input-group label {
@@ -253,19 +351,104 @@ body {
     cursor: pointer;
 }
 
-.menu-input-group input[type="range"] {
-    width: 100%;
+/* Các nút B I U */
+.format-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 0 20px;
 }
 
-.range-display {
-    float: right;
-    color: #0067b8;
-    font-weight: bold;
+.format-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative;
 }
 
+.format-btn:hover {
+    background: #f5f5f5;
+    border-color: #0067b8;
+}
+
+.format-btn.active {
+    background: #0067b8;
+    color: white;
+    border-color: #0067b8;
+}
+
+.format-btn-bold {
+    font-family: Arial, sans-serif;
+}
+
+.format-btn-italic {
+    font-family: Georgia, serif;
+    font-style: italic;
+}
+
+.format-btn-underline {
+    text-decoration: underline;
+}
+
+.format-btn .tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    margin-bottom: 5px;
+}
+
+.format-btn:hover .tooltip {
+    opacity: 1;
+}
+
+/* Top menu */
+.top-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #f5f5f5;
+    color: #333;
+    padding: 12px 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    z-index: 50;
+}
+
+.menu-divider {
+    width: 1px;
+    height: 30px;
+    background: #9c9b9b;
+}
+
+/* Action Buttons */
 .action-buttons {
     display: flex;
     gap: 10px;
+    margin-left: auto;
 }
 
 .action-buttons button {
@@ -295,7 +478,7 @@ body {
     background: #005a9e;
 }
 
-/* User Menu */
+/* Đăng nhập đăng ký User */
 .user-menu {
     position: relative;
     display: flex;
@@ -309,11 +492,7 @@ body {
     transition: all 0.3s;
 }
 
-.user-menu:hover {
-    background: #e8f4fd;
-    border-color: #0067b8;
-}
-
+.user-menu:hover,
 .user-menu.active {
     background: #e8f4fd;
     border-color: #0067b8;
@@ -386,7 +565,6 @@ body {
 .auth-buttons {
     display: flex;
     gap: 10px;
-    margin-left: auto;
 }
 
 .auth-btn {
@@ -419,17 +597,31 @@ body {
     background: #005a9e;
 }
 
-/* Main content */
+.content-wrapper {
+    margin-left: 320px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: margin-left 0.3s ease;
+}
+
+.content-wrapper.panel-closed {
+    margin-left: 70px;
+}
+
 .main-container {
     flex: 1;
     display: flex;
     overflow: hidden;
+    margin-top: 60px;
 }
 
 .controls {
     display: none;
 }
 
+/* Main */
 .product-preview {
     flex: 1;
     display: flex;
@@ -441,7 +633,94 @@ body {
     padding: 20px;
 }
 
-.product-preview img {
+/* Upload Area */
+.upload-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: 
+        linear-gradient(rgba(200, 200, 200, 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+    background-size: 30px 30px;
+    background-color: #fafafa;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px dashed transparent;
+    z-index: 1;
+}
+
+.upload-area:hover {
+    background-color: #f0f0f0;
+    border-color: #0067b8;
+}
+
+.upload-area.dragover {
+    background-color: #e8f5e9;
+    border-color: #0067b8;
+}
+
+.upload-area.hidden {
+    display: none;
+}
+
+.upload-placeholder {
+    text-align: center;
+    color: #666;
+    pointer-events: none;
+}
+
+.upload-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px;
+    border: 3px solid #0067b8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    color: #0067b8;
+    background: white;
+    transition: all 0.3s;
+}
+
+.upload-area:hover .upload-icon {
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(0, 103, 184, 0.3);
+}
+
+.upload-text {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.upload-hint {
+    font-size: 14px;
+    color: #999;
+}
+
+/* Image Container */
+.image-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-container.hidden {
+    display: none;
+}
+
+.base-image {
     max-width: 100%;
     max-height: 100%;
     display: block;
@@ -461,13 +740,40 @@ body {
     pointer-events: none;
 }
 
-/* Auth Modal */
+/* Change Image Button */
+.change-image-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background: #0067b8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.change-image-btn.active {
+    display: flex;
+}
+
+.change-image-btn:hover {
+    background: #005a9e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 103, 184, 0.3);
+}
+
+/* Đăng nhập đăng ký */
 .auth-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0,0,0,0.5);
     display: none;
     align-items: center;
@@ -546,7 +852,6 @@ body {
     border-radius: 4px;
     font-size: 14px;
     transition: all 0.3s;
-    box-sizing: border-box;
 }
 
 .auth-modal form input:focus {
@@ -599,7 +904,7 @@ body {
     display: block;
 }
 
-/* Toast Item - Single toast, không cần container */
+/* Toast */
 .toast {
     position: fixed;
     top: 80px;
@@ -631,7 +936,6 @@ body {
     transform: translateX(400px);
 }
 
-/* Toast Types */
 .toast.success {
     border-left: 4px solid #107c10;
 }
@@ -644,18 +948,15 @@ body {
     border-left: 4px solid #ff9800;
 }
 
-/* Toast Icon (nếu có dùng) */
 .toast-icon {
     font-size: 24px;
     flex-shrink: 0;
 }
 
-/* Toast Content */
 .toast-content {
     flex: 1;
 }
 
-/* Toast Message */
 .toast-message {
     font-size: 15px;
     font-weight: 500;
@@ -681,17 +982,21 @@ body {
     justify-content: center;
     border-radius: 4px;
     transition: all 0.2s ease;
-    line-height: 1;
-    padding: 0;
-    user-select: none;
 }
 
-.toast.success .toast-progress::after { background: #107c10; }
-.toast.error .toast-progress::after { background: #c50f1f; }
-.toast.warning .toast-progress::after { background: #ff9800; }
+.toast.success .toast-progress::after { 
+    background: #107c10; 
+}
 
+.toast.error .toast-progress::after { 
+    background: #c50f1f; 
+}
 
-/* Confirm Dialog */
+.toast.warning .toast-progress::after { 
+    background: #ff9800; 
+}
+
+/* Hộp thông báo */
 .confirm-overlay {
     position: fixed;
     inset: 0;
@@ -700,6 +1005,10 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 9999;
+}
+
+.confirm-overlay.hidden {
+    display: none;
 }
 
 .confirm-box {
@@ -750,10 +1059,137 @@ body {
     background: #005aa3;
 }
 
-.hidden {
-    display: none;
+
+#canva-transform-box {
+    position: absolute;
+    border: 2px solid #0d99ff;
+    box-shadow: 0 0 0 1px rgba(13, 153, 255, 0.2);
+    pointer-events: none;
+    transition: none;
 }
 
+#canva-transform-box * {
+    pointer-events: auto;
+}
+
+/* Resize Handles */
+.resize-handle {
+    position: absolute;
+    background: white;
+    border: 2px solid #0d99ff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.resize-handle:hover {
+    background: #0d99ff;
+    transform: scale(1.2);
+}
+
+/* Corners */
+.corner-nw, .corner-ne, .corner-se, .corner-sw {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.corner-nw { top: -6px; left: -6px; cursor: nw-resize; }
+.corner-ne { top: -6px; right: -6px; cursor: ne-resize; }
+.corner-se { bottom: -6px; right: -6px; cursor: se-resize; }
+.corner-sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+
+/* Edges */
+.edge-n, .edge-s {
+    width: 40px;
+    height: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
+
+.edge-e, .edge-w {
+    width: 8px;
+    height: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 2px;
+}
+
+.edge-n { top: -4px; cursor: n-resize; }
+.edge-s { bottom: -4px; cursor: s-resize; }
+.edge-e { right: -4px; cursor: e-resize; }
+.edge-w { left: -4px; cursor: w-resize; }
+
+/* Rotate Handle */
+.rotate-handle {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 2px solid #0d99ff;
+    border-radius: 50%;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #0d99ff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.rotate-handle:hover {
+    background: #0d99ff;
+    color: white;
+    transform: translateX(-50%) scale(1.2);
+}
+
+.rotate-handle:active {
+    cursor: grabbing;
+}
+
+.rotate-handle::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 11px;
+    background: #0d99ff;
+}
+
+/* Move Area */
+.move-area {
+    position: absolute;
+    inset: 0;
+    cursor: move;
+    background: rgba(13, 153, 255, 0.05);
+    transition: background 0.2s;
+}
+
+.move-area:hover {
+    background: rgba(13, 153, 255, 0.1);
+}
+
+.move-area:active {
+    cursor: grabbing;
+    background: rgba(13, 153, 255, 0.15);
+}
+
+/* Selected SVG patch */
+#nameBg.selected {
+    stroke: #0d99ff;
+    stroke-width: 2;
+    stroke-dasharray: 5, 5;
+    animation: dashAnimation 0.5s linear infinite;
+}
+
+/* Animation */
 @keyframes fadeIn {
     from {
         transform: scale(0.9);
@@ -765,3 +1201,131 @@ body {
     }
 }
 
+@keyframes transformBoxAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes dashAnimation {
+    to {
+        stroke-dashoffset: -10;
+    }
+}
+
+/* Arial */
+@font-face {
+    font-family: 'Arial';
+    src: url('/fonts/arial.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Arial';
+    src: url('/fonts/arialbd.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Arial';
+    src: url('/fonts/ariali.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Arial';
+    src: url('/fonts/arialbi.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* Times New Roman */
+@font-face {
+    font-family: 'Times New Roman';
+    src: url('/fonts/timesnewroman.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Times New Roman';
+    src: url('/fonts/timesnewromanbd.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Courier New */
+@font-face {
+    font-family: 'Courier New';
+    src: url('/fonts/couriernew.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Courier New';
+    src: url('/fonts/couriernewbd.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Verdana */
+@font-face {
+    font-family: 'Verdana';
+    src: url('/fonts/verdana.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Verdana';
+    src: url('/fonts/verdanab.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Georgia */
+@font-face {
+    font-family: 'Georgia';
+    src: url('/fonts/georgia.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia';
+    src: url('/fonts/georgiab.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Trebuchet MS */
+@font-face {
+    font-family: 'Trebuchet MS';
+    src: url('/fonts/trebuchetms.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Trebuchet MS';
+    src: url('/fonts/trebuchetmsbd.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Impact */
+@font-face {
+    font-family: 'Impact';
+    src: url('/fonts/impact.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
