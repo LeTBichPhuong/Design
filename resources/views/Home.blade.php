@@ -58,9 +58,9 @@
             {{-- nhập chữ --}}
             <div id="menuText" class="panel-content">
                 <div class="dropdown-menu show">
-                    <h2>Nhập Chữ In</h2>
+                    <h2>Nhập Văn Bản</h2>
                     <div class="menu-input-group">
-                        <label>Nội dung in</label>
+                        <label>Nội dung văn bản</label>
                         <input
                             type="text"
                             id="nameInput"
@@ -86,6 +86,14 @@
                             <option value="'Verdana', sans-serif">Verdana</option>
                             <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
                         </select>
+                    </div>
+                    <!-- Nút tải lên font custom -->
+                    <div class="menu-input-group">
+                        <label>Tải lên phông chữ tùy chỉnh</label>
+                        <button type="button" id="uploadFontBtn" class="btn btn-primary">
+                            <i class="bx bx-upload"></i>Tải lên phông chữ
+                        </button>
+                        <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display: none;">
                     </div>
                     <div class="menu-input-group">
                         <label>Cỡ chữ</label>

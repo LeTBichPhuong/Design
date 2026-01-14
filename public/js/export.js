@@ -220,6 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (window.updateUnderlineState) window.updateUnderlineState(isUnderline);
                 }
 
+                // Lấy serverFile từ option được chọn (nếu có)
+                const selectedOption = fontFamily?.options[fontFamily.selectedIndex];
+                const customFontFile = selectedOption?.dataset?.serverFile || config.customFontFile || null;
+                
+                console.log('Loading design - customFontFile:', customFontFile);
+
                 // Cập nhật localStorage
                 localStorage.setItem('currentDesign', JSON.stringify({
                     name: config.text || '',
@@ -238,7 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     isBold: config.fontWeight === 'bold',
                     isItalic: config.fontStyle === 'italic',
                     isUnderline: config.textDecoration === 'underline',
-                    imageDataUrl: window.currentFullResImageUrl || baseImage.src
+                    imageDataUrl: window.currentFullResImageUrl || baseImage.src,
+                    customFontFile: customFontFile
                 }));
 
                 // Update SVG
@@ -279,105 +286,132 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('designsNeedReload', () => {
         loadDesigns();
     });
+    
 
     // Lưu thiết kế
-    if (saveBtn) {
-        saveBtn.addEventListener('click', async () => {
-            const config = window.getExportConfig ? window.getExportConfig() : null;
+if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+        const config = window.getExportConfig ? window.getExportConfig() : null;
 
-            if (!config || !config.text) {
-                toast('Chưa có nội dung', 'error');
-                return;
-            }
+        if (!config || !config.text) {
+            toast('Chưa có nội dung', 'error');
+            return;
+        }
 
-            const baseImage = document.getElementById('baseImage');
-            if (!baseImage || !baseImage.src) {
-                toast('Chưa chọn ảnh nền', 'error');
-                return;
-            }
+        const baseImage = document.getElementById('baseImage');
+        if (!baseImage || !baseImage.src) {
+            toast('Chưa chọn ảnh nền', 'error');
+            return;
+        }
 
-            try {
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Đang lưu...';
+        try {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Đang lưu...';
 
-                const isUpdate = !!window.currentDesignId;
-                let uploadedImagePath = window.currentBaseImage || window.currentFullResImageUrl;
+            const isUpdate = !!window.currentDesignId;
+            let uploadedImagePath = window.currentBaseImage || window.currentFullResImageUrl;
 
-                // Nếu ảnh từ dataURL (upload mới) → upload lên server
-                if (baseImage.src.startsWith('data:')) {
-                    const blob = await (await fetch(baseImage.src)).blob();
-                    const formData = new FormData();
-                    formData.append('image', blob, 'design.png');
+            // Nếu ảnh từ dataURL (upload mới) → upload lên server
+            if (baseImage.src.startsWith('data:')) {
+                const blob = await (await fetch(baseImage.src)).blob();
+                const formData = new FormData();
+                formData.append('image', blob, 'design.png');
 
-                    const uploadRes = await fetch('/upload-image', {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': csrf },
-                        body: formData
-                    });
-
-                    if (!uploadRes.ok) throw new Error('Upload thất bại');
-
-                    const uploadData = await uploadRes.json();
-                    uploadedImagePath = uploadData.path;
-                    window.currentFullResImageUrl = '/' + uploadData.path.replace(/^\/+/, '');
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 200));
-
-                const thumbnailDataUrl = await generateThumbnail();
-
-                let thumbnailPath = null;
-                if (thumbnailDataUrl) {
-                    const blob = await (await fetch(thumbnailDataUrl)).blob();
-                    const formData = new FormData();
-                    formData.append('image', blob, 'thumbnail.png');
-
-                    const uploadRes = await fetch('/upload-image', {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': csrf },
-                        body: formData
-                    });
-
-                    if (uploadRes.ok) {
-                        const data = await uploadRes.json();
-                        thumbnailPath = data.path;
-                    }
-                }
-
-                const url = isUpdate ? `/designs/${window.currentDesignId}` : `/designs`;
-
-                const res = await fetch(url, {
-                    method: isUpdate ? 'PUT' : 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrf,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: config.text,
-                        base_image: uploadedImagePath,
-                        config: config,
-                        export_image: thumbnailPath
-                    })
+                const uploadRes = await fetch('/upload-image', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                    body: formData
                 });
 
-                if (!res.ok) throw new Error('Lưu thất bại');
+                if (!uploadRes.ok) throw new Error('Upload thất bại');
 
-                const data = await res.json();
-                window.currentDesignId = data.design.id;
-
-                toast(isUpdate ? 'Đã cập nhật thiết kế thành công' : 'Đã lưu thiết kế thành công');
-                loadDesigns();
-
-            } catch (e) {
-                console.error('Save error:', e);
-                toast(e.message || 'Lưu thiết kế thất bại', 'error');
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'LƯU';
+                const uploadData = await uploadRes.json();
+                uploadedImagePath = uploadData.path;
+                window.currentFullResImageUrl = '/' + uploadData.path.replace(/^\/+/, '');
             }
-        });
-    }
+
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            const thumbnailDataUrl = await generateThumbnail();
+
+            let thumbnailPath = null;
+            if (thumbnailDataUrl) {
+                const blob = await (await fetch(thumbnailDataUrl)).blob();
+                const formData = new FormData();
+                formData.append('image', blob, 'thumbnail.png');
+
+                const uploadRes = await fetch('/upload-image', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                    body: formData
+                });
+
+                if (uploadRes.ok) {
+                    const data = await uploadRes.json();
+                    thumbnailPath = data.path;
+                }
+            }
+
+            // ✅ === QUAN TRỌNG: LẤY customFontFile ===
+            const fontFamilySelect = document.getElementById('fontFamily');
+            const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
+            const customFontFile = selectedOption?.dataset?.serverFile || null;
+
+            console.log('=== SAVE DEBUG ===');
+            console.log('Selected option:', selectedOption);
+            console.log('dataset.serverFile:', selectedOption?.dataset?.serverFile);
+            console.log('customFontFile:', customFontFile);
+            console.log('Font family:', config.fontFamily);
+
+            // ✅ Thêm customFontFile vào config
+            const configWithFont = {
+                ...config,
+                customFontFile: customFontFile
+            };
+
+            console.log('=== CONFIG TO SAVE ===');
+            console.log(JSON.stringify(configWithFont, null, 2));
+
+            const url = isUpdate ? `/designs/${window.currentDesignId}` : `/designs`;
+
+            const res = await fetch(url, {
+                method: isUpdate ? 'PUT' : 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: config.text,
+                    base_image: uploadedImagePath,
+                    config: configWithFont,
+                    export_image: thumbnailPath
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error('Save error response:', errorData);
+                throw new Error(errorData.message || 'Lưu thất bại');
+            }
+
+            const data = await res.json();
+            console.log('Save response:', data);
+            
+            window.currentDesignId = data.design.id;
+
+            toast(isUpdate ? 'Đã cập nhật thiết kế thành công' : 'Đã lưu thiết kế thành công');
+            loadDesigns();
+
+        } catch (e) {
+            console.error('Save error:', e);
+            toast(e.message || 'Lưu thiết kế thất bại', 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'LƯU';
+        }
+    });
+}
 
     // Xóa thiết kế
     async function deleteDesign(id) {
@@ -403,12 +437,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Xuất ảnh client-side với high-res
+    // Xuất thiết kế
     if (exportBtn) {
         exportBtn.addEventListener('click', async () => {
             const baseImage = document.getElementById('baseImage');
             const printName = document.getElementById('printName');
-            const printLayer = document.getElementById('printLayer');
 
             if (!baseImage?.src || baseImage.src === PLACEHOLDER) {
                 toast('Chưa chọn ảnh nền', 'error');
@@ -420,104 +453,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // bắt buộc lưu trước khi xuất
+            if (!window.currentDesignId) {
+                toast('Đang tự động lưu thiết kế...', 'info');
+                
+                // Trigger save
+                if (saveBtn) {
+                    saveBtn.click();
+                    
+                    // Đợi save xong
+                    await new Promise(resolve => {
+                        const checkSaved = setInterval(() => {
+                            if (window.currentDesignId) {
+                                clearInterval(checkSaved);
+                                resolve();
+                            }
+                        }, 500);
+                        
+                        // Timeout sau 10s
+                        setTimeout(() => {
+                            clearInterval(checkSaved);
+                            resolve();
+                        }, 10000);
+                    });
+                    
+                    if (!window.currentDesignId) {
+                        toast('Vui lòng lưu thiết kế trước', 'error');
+                        return;
+                    }
+                }
+            }
+
             try {
                 exportBtn.disabled = true;
                 exportBtn.textContent = 'Đang xuất...';
 
-                // Load ảnh full-res để xuất chất lượng cao
-                const fullImg = new Image();
-                fullImg.crossOrigin = 'anonymous';
-                await new Promise((resolve, reject) => {
-                    fullImg.onload = resolve;
-                    fullImg.onerror = reject;
-                    fullImg.src = window.currentFullResImageUrl || baseImage.src;
-                });
+                console.log('=== EXPORTING DESIGN ===');
+                console.log('Design ID:', window.currentDesignId);
 
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = fullImg.naturalWidth;
-                canvas.height = fullImg.naturalHeight;
-                ctx.drawImage(fullImg, 0, 0);
-
-                // Vẽ SVG overlay full size
-                const svgData = new XMLSerializer().serializeToString(printLayer);
-                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-                const svgUrl = URL.createObjectURL(svgBlob);
-
-                const svgImg = new Image();
-                await new Promise((resolve, reject) => {
-                    svgImg.onload = resolve;
-                    svgImg.onerror = reject;
-                    svgImg.src = svgUrl;
-                });
-
-                ctx.drawImage(svgImg, 0, 0, canvas.width, canvas.height);
-                URL.revokeObjectURL(svgUrl);
-
-                // Tên file
-                let cleanName = printName.textContent.trim()
-                    .replace(/\n/g, ' ')
-                    .replace(/[\\/:*?"<>|]/g, '')
-                    .substring(0, 50);
-                if (!cleanName) cleanName = 'design';
-                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '');
-                const filename = `${cleanName}_${timestamp}.png`;
-
-                const dataURL = canvas.toDataURL('image/png', 1.0);
-
-                // Tự động tải về
-                const a = document.createElement('a');
-                a.href = dataURL;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                // Upload để có link thật
-                exportBtn.textContent = 'Đang upload...';
-                const blob = await (await fetch(dataURL)).blob();
-                const formData = new FormData();
-                formData.append('image', blob, filename);
-
-                const uploadRes = await fetch('/upload-image', {
+                const res = await fetch(`/designs/${window.currentDesignId}/export`, {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrf },
-                    body: formData
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json'
+                    }
                 });
 
-                if (uploadRes.ok) {
-                    const uploadData = await uploadRes.json();
-                    const fullUrl = '/' + uploadData.path.replace(/^\/+/, '');
-
-                    // Mở tab mới với link thật
-                    window.open(fullUrl, '_blank');
-
-                    // Cập nhật export_image trong DB
-                    if (window.currentDesignId) {
-                        await fetch(`/designs/${window.currentDesignId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'X-CSRF-TOKEN': csrf,
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                export_image: uploadData.path
-                            })
-                        });
-                        setTimeout(() => loadDesigns(), 500);
-                    }
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error('Export error:', errorData);
+                    throw new Error(errorData.message || 'Xuất ảnh thất bại');
                 }
 
-                toast('Xuất ảnh thành công!', 'success');
+                const data = await res.json();
+                console.log('Export response:', data);
+
+                if (data.success) {
+                    // Tự động tải về
+                    const a = document.createElement('a');
+                    a.href = data.url;
+                    a.download = data.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    // Mở ảnh trong tab mới
+                    setTimeout(() => {
+                        window.open(data.url, '_blank');
+                    }, 500);
+
+                    toast('Xuất ảnh thành công!', 'success');
+                    
+                    // Reload designs để cập nhật thumbnail
+                    setTimeout(() => loadDesigns(), 1000);
+                } else {
+                    throw new Error(data.message || 'Xuất ảnh thất bại');
+                }
 
             } catch (e) {
                 console.error('Export error:', e);
-                toast('Xuất ảnh thất bại', 'error');
+                toast(e.message || 'Xuất ảnh thất bại', 'error');
             } finally {
                 exportBtn.disabled = false;
                 exportBtn.textContent = 'XUẤT';
             }
         });
     }
-
 });

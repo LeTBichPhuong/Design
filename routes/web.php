@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DesignController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 Route::get('/', function () {
     return view('Home');
@@ -49,6 +50,91 @@ Route::get('/designs/{filename}', function ($filename) {
     ]);
 })->where('filename', '.*\.(png|jpg|jpeg|gif)$')->name('design.file');
 
+// Upload font custom lên storage
+Route::post('/upload-font', function (Illuminate\Http\Request $request) {
+    try {
+        // Validation với MIME types đầy đủ
+        $validator = Validator::make($request->all(), [
+            'font' => [
+                'required',
+                'file',
+                'max:10240', // max 10MB
+                function ($attribute, $value, $fail) {
+                    $validExtensions = ['ttf', 'otf', 'woff', 'woff2'];
+                    $extension = strtolower($value->getClientOriginalExtension());
+                    
+                    if (!in_array($extension, $validExtensions)) {
+                        $fail('Font phải có định dạng: ttf, otf, woff, woff2');
+                    }
+                    
+                    // Kiểm tra MIME type
+                    $validMimes = [
+                        'font/ttf',
+                        'font/otf', 
+                        'font/woff',
+                        'font/woff2',
+                        'application/font-sfnt',
+                        'application/font-woff',
+                        'application/font-woff2',
+                        'application/x-font-ttf',
+                        'application/x-font-otf',
+                        'application/octet-stream' // Một số font có MIME này
+                    ];
+                    
+                    $mime = $value->getMimeType();
+                    if (!in_array($mime, $validMimes)) {
+                        \Log::warning('Font MIME type not in whitelist', [
+                            'mime' => $mime,
+                            'extension' => $extension
+                        ]);
+                        // Cho phép nếu extension đúng
+                    }
+                }
+            ]
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
+
+        $file = $request->file('font');
+        $originalName = $file->getClientOriginalName();
+        
+        // Tạo tên file unique nhưng giữ tên gốc để dễ map
+        $filename = uniqid() . '_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $path = $file->storeAs('fonts', $filename, 'public');
+        
+        // Copy sang public/fonts để PHP GD có thể dùng
+        $publicFontPath = public_path('fonts/' . $filename);
+        $storageFontPath = storage_path('app/public/' . $path);
+        
+        if (!file_exists(public_path('fonts'))) {
+            mkdir(public_path('fonts'), 0755, true);
+        }
+        
+        copy($storageFontPath, $publicFontPath);
+
+        return response()->json([
+            'success' => true,
+            'url' => asset('storage/' . $path),
+            'name' => $originalName,
+            'serverFileName' => $filename
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('Upload font error: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi server: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('upload.font');
 // image upload
 Route::post('/upload-image', function (Illuminate\Http\Request $request) {
     $request->validate([

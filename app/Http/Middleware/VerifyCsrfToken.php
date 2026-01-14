@@ -13,6 +13,7 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'api/*',  // Tắt CSRF cho tất cả route API
+        'upload-font'
     ];
     public function boot()
     {

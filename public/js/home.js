@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hasSetupBg = false;     // Người dùng đã chọn màu nền chưa
     let hasSetupStroke = false; // Người dùng đã chọn màu viền chưa
-    
+
     // Giữ URL, chỉ load name vào input
     if (nameInput) {
         if (nameInput.value && nameInput.value.trim() !== '') {
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // CSRF
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    // === HỖ TRỢ ẢNH HIGH-RES ===
+    // Hỗ trợ anh high-res
     window.currentFullResImageUrl = null;
 
     async function loadImageForEditor(fullUrl) {
@@ -119,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sync font size
     if (fontSize && fontSizeInput) {
-        // Hàm hỗ trợ: thêm option mới nếu chưa có
         function addFontSizeOption(value) {
             if (!value) return;
             const val = String(value);
@@ -174,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     // Load saved design from localStorage
     function loadSavedDesign() {
         try {
@@ -222,8 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Gọi load saved design
     function saveDesign() {
         try {
+            const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
+            const customFontFile = selectedOption?.dataset?.serverFile || null;
+            
             const design = {
                 name: currentName,
                 textX: window.currentTextX,
@@ -239,7 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 fontStyle: isItalic ? 'italic' : 'normal',
                 textDecoration: isUnderline ? 'underline' : 'none',
                 isBold, isItalic, isUnderline,
-                imageDataUrl: baseImage.src
+                imageDataUrl: baseImage.src,
+                customFontFile: customFontFile  // ← THÊM DÒNG NÀY
             };
             localStorage.setItem('currentDesign', JSON.stringify(design));
         } catch (e) {
@@ -247,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Gọi load saved design ngay khi script chạy
     if (newDesignBtn) {
         newDesignBtn.addEventListener('click', () => {
             localStorage.removeItem('currentDesign');
@@ -294,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Cập nhật viewBox SVG khi ảnh load xong
     function updateSVGViewBox() {
         if (!svg || !baseImage || !baseImage.complete || !baseImage.naturalWidth) return;
 
@@ -972,6 +979,132 @@ document.addEventListener('DOMContentLoaded', () => {
         closePanel();
     }
 
+const uploadFontBtn = document.getElementById('uploadFontBtn');
+    const fontFileInput = document.getElementById('fontFileInput');
+    const fontFamilySelect = document.getElementById('fontFamily');
+
+    // Danh sách font custom đã lưu (từ localStorage)
+    let customFonts = JSON.parse(localStorage.getItem('customFonts') || '[]');
+
+    // Hàm thêm font vào document và select
+    function addCustomFont(fontName, fontUrl, serverFileName) {
+        console.log('Adding custom font:', { fontName, fontUrl, serverFileName });
+        
+        // Thêm @font-face động
+        const style = document.createElement('style');
+        style.textContent = `
+            @font-face {
+                font-family: '${fontName}';
+                src: url('${fontUrl}') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Thêm vào select (nếu chưa có)
+        if (!fontFamilySelect.querySelector(`option[value="'${fontName}', sans-serif"]`)) {
+            const option = document.createElement('option');
+            option.value = `'${fontName}', sans-serif`;
+            option.textContent = fontName;
+            option.dataset.serverFile = serverFileName; // ĐÂY LÀ QUAN TRỌNG
+            fontFamilySelect.appendChild(option);
+            console.log('Added option with serverFile:', option.dataset.serverFile);
+        }
+    }
+
+    // Load tất cả font custom từ localStorage khi trang load
+    if (customFonts.length > 0) {
+        customFonts.forEach(font => {
+            addCustomFont(font.name, font.url, font.serverFileName);
+        });
+    }
+
+    // Xử lý nút tải lên
+    if (uploadFontBtn && fontFileInput) {
+        uploadFontBtn.addEventListener('click', () => {
+            fontFileInput.click();
+        });
+
+        fontFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Kiểm tra định dạng
+            const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+            const fileName = file.name.toLowerCase();
+            const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (!hasValidExt) {
+                showToast('Chỉ chấp nhận file .ttf, .otf, .woff, .woff2', 'error');
+                fontFileInput.value = '';
+                return;
+            }
+
+            try {
+                showToast('Đang tải lên font...', 'info');
+                
+                // Upload lên server
+                const formData = new FormData();
+                formData.append('font', file);
+
+                const uploadRes = await fetch('/upload-font', {
+                    method: 'POST',
+                    headers: { 
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json' // Quan trọng!
+                    },
+                    body: formData
+                });
+
+                // Kiểm tra response type
+                const contentType = uploadRes.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await uploadRes.text();
+                    console.error('Server response:', text);
+                    throw new Error('Server không trả về JSON. Kiểm tra route /upload-font');
+                }
+
+                const data = await uploadRes.json();
+                
+                if (!uploadRes.ok) {
+                    throw new Error(data.message || 'Upload thất bại');
+                }
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Upload không thành công');
+                }
+
+                const fontName = data.name.replace(/\.[^/.]+$/, ""); // Tên font không đuôi
+                const fontUrl = data.url; // URL công khai: /storage/fonts/abc.ttf
+                const serverFileName = data.serverFileName; // Tên file trên server
+
+                // Lưu vào localStorage
+                customFonts.push({
+                    name: fontName,
+                    url: fontUrl,
+                    serverFileName: serverFileName
+                });
+                localStorage.setItem('customFonts', JSON.stringify(customFonts));
+
+                // Thêm font vào UI
+                addCustomFont(fontName, fontUrl, serverFileName);
+
+                // Tự động chọn font mới
+                fontFamilySelect.value = `'${fontName}', sans-serif`;
+                updateName();
+                saveDesign();
+
+                showToast('Đã tải lên phông chữ thành công!', 'success');
+
+            } catch (err) {
+                console.error('Upload font error:', err);
+                showToast(err.message || 'Tải lên phông chữ thất bại', 'error');
+            } finally {
+                fontFileInput.value = ''; // Reset input
+            }
+        });
+    }
     // Toast notification
     const toast = document.getElementById('toast');
     const toastMessage = toast?.querySelector('.toast-message');
@@ -1069,23 +1202,48 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('currentDesign');
     };
     
+    // Lấy config để xuất
     window.getExportConfig = function() {
+        const fontFamilySelect = document.getElementById('fontFamily');
+        const fontSizeInput = document.getElementById('fontSizeInput');
+        const fontSize = document.getElementById('fontSize');
+        const textColor = document.getElementById('textColor');
+        const bgColor = document.getElementById('bgColor');
+        const strokeColor = document.getElementById('strokeColor');
+        
         const currentFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
-        return {
+        
+        // Lấy customFontFile từ option đã chọn
+        const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
+        const customFontFile = selectedOption?.dataset?.serverFile || null;
+        
+        console.log('=== getExportConfig DEBUG ===');
+        console.log('Selected option:', selectedOption);
+        console.log('dataset:', selectedOption?.dataset);
+        console.log('serverFile:', selectedOption?.dataset?.serverFile);
+        console.log('customFontFile:', customFontFile);
+        
+        const config = {
             text: currentName,
             x: window.currentTextX,
             y: window.currentTextY,
             patchWidth: window.currentPatchWidth,
             patchHeight: window.currentPatchHeight,
-            fontFamily: fontFamily.value,
+            fontFamily: fontFamilySelect.value,
             fontSize: currentFontSize,
             fontWeight: isBold ? 'bold' : 'normal',
             fontStyle: isItalic ? 'italic' : 'normal',
             textDecoration: isUnderline ? 'underline' : 'none',
             textColor: textColor.value,
             bgColor: bgColor.value,
-            strokeColor: strokeColor.value
+            strokeColor: strokeColor.value,
+            customFontFile: customFontFile 
         };
+        
+        console.log('=== FINAL CONFIG ===');
+        console.log(JSON.stringify(config, null, 2));
+        
+        return config;
     };
 
     window.updateBoldState = (value) => isBold = value;
