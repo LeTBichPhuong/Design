@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hasSetupBg = false;     // Người dùng đã chọn màu nền chưa
     let hasSetupStroke = false; // Người dùng đã chọn màu viền chưa
-
+    
     // Giữ URL, chỉ load name vào input
     if (nameInput) {
         if (nameInput.value && nameInput.value.trim() !== '') {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isItalic = false;
     let isUnderline = false;
 
-    // FIX: Drag state - Dùng biến global để export.js truy cập được
+    // Drag & drop
     let isDragging = false;
     window.currentTextX = 0;
     window.currentTextY = 0;
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cập nhật viewBox SVG khi ảnh load xong
+    // Gọi load saved design
     function updateSVGViewBox() {
         if (!svg || !baseImage || !baseImage.complete || !baseImage.naturalWidth) return;
 
@@ -369,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Change image button
     if (changeImageBtn) {
         changeImageBtn.addEventListener('click', () => fileInput?.click());
     }
@@ -695,6 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveDesign();
     }
+    
     // Inline edit
     let isEditingInline = false;
 
@@ -816,6 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 50);
     }
 
+    // Cập nhật kích thước và vị trí patch khi chỉnh sửa inline
     function updatePatchSizeAndPosition(textarea) {
         if (!bg || !textarea) return;
         
@@ -863,6 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
         textarea.style.height = Math.max(newPatchHeight, textarea.scrollHeight) + 'px';
     }
 
+    // Kết thúc chỉnh sửa inline
     function finishInlineEdit() {
         if (!isEditingInline) return;
         
@@ -897,6 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentPanelId = document.querySelector('.tool-btn.active')?.dataset.target || 'menuSaved';
 
+    // Mở panel
     function openPanel(targetId) {
         if (!targetId) return;
 
@@ -927,6 +932,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Đóng panel
     function closePanel() {
         savedDesigns.classList.add('panel-closed');
         leftPanel.classList.add('collapsed');
@@ -938,6 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Chuyển đổi trạng thái panel
     function togglePanel() {
         const isClosed = savedDesigns.classList.contains('panel-closed');
         if (isClosed) {
@@ -947,6 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Xử lý click trên toolbar
     document.querySelector('.left-toolbar').addEventListener('click', (e) => {
         const toolBtn = e.target.closest('.tool-btn');
         if (toolBtn && !toolBtn.classList.contains('active')) {
@@ -955,10 +963,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Xử lý nút đóng panel
     if (panelCloseBtn) {
         panelCloseBtn.addEventListener('click', togglePanel);
     }
 
+    // Ngăn không cho click vào form bên trong panel đóng panel
     document.querySelectorAll('.left-panel input, .left-panel select, .left-panel textarea, .left-panel button')
         .forEach(el => {
             el.addEventListener('click', e => e.stopPropagation());
@@ -967,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     openPanel(currentPanelId);
     
+    // Đóng panel
     window.addEventListener('resize', () => {
         if (window.innerWidth <= 768) {
             closePanel();
@@ -975,11 +986,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Mở/đóng panel theo kích thước ban đầu
     if (window.innerWidth <= 768) {
         closePanel();
     }
 
-const uploadFontBtn = document.getElementById('uploadFontBtn');
+    // Upload font custom
+    const uploadFontBtn = document.getElementById('uploadFontBtn');
     const fontFileInput = document.getElementById('fontFileInput');
     const fontFamilySelect = document.getElementById('fontFamily');
 
@@ -988,7 +1001,6 @@ const uploadFontBtn = document.getElementById('uploadFontBtn');
 
     // Hàm thêm font vào document và select
     function addCustomFont(fontName, fontUrl, serverFileName) {
-        console.log('Adding custom font:', { fontName, fontUrl, serverFileName });
         
         // Thêm @font-face động
         const style = document.createElement('style');
@@ -1009,7 +1021,6 @@ const uploadFontBtn = document.getElementById('uploadFontBtn');
             option.textContent = fontName;
             option.dataset.serverFile = serverFileName; // ĐÂY LÀ QUAN TRỌNG
             fontFamilySelect.appendChild(option);
-            console.log('Added option with serverFile:', option.dataset.serverFile);
         }
     }
 
@@ -1105,6 +1116,7 @@ const uploadFontBtn = document.getElementById('uploadFontBtn');
             }
         });
     }
+
     // Toast notification
     const toast = document.getElementById('toast');
     const toastMessage = toast?.querySelector('.toast-message');
@@ -1202,7 +1214,7 @@ const uploadFontBtn = document.getElementById('uploadFontBtn');
         localStorage.removeItem('currentDesign');
     };
     
-    // Lấy config để xuất
+    // Lấy config để export
     window.getExportConfig = function() {
         const fontFamilySelect = document.getElementById('fontFamily');
         const fontSizeInput = document.getElementById('fontSizeInput');
@@ -1216,12 +1228,6 @@ const uploadFontBtn = document.getElementById('uploadFontBtn');
         // Lấy customFontFile từ option đã chọn
         const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
         const customFontFile = selectedOption?.dataset?.serverFile || null;
-        
-        console.log('=== getExportConfig DEBUG ===');
-        console.log('Selected option:', selectedOption);
-        console.log('dataset:', selectedOption?.dataset);
-        console.log('serverFile:', selectedOption?.dataset?.serverFile);
-        console.log('customFontFile:', customFontFile);
         
         const config = {
             text: currentName,
@@ -1237,11 +1243,8 @@ const uploadFontBtn = document.getElementById('uploadFontBtn');
             textColor: textColor.value,
             bgColor: bgColor.value,
             strokeColor: strokeColor.value,
-            customFontFile: customFontFile 
+            customFontFile: customFontFile
         };
-        
-        console.log('=== FINAL CONFIG ===');
-        console.log(JSON.stringify(config, null, 2));
         
         return config;
     };
