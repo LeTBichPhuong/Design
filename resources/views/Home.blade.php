@@ -64,7 +64,7 @@
                         <input
                             type="text"
                             id="nameInput"
-                            placeholder="Nhập chữ cần in…"
+                            placeholder="Nội dung văn bản..."
                             maxlength="60"
                         >
                     </div>
