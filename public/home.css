@@ -172,6 +172,7 @@ body.transforming {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    width: 230px;
 }
 
 #savedList::-webkit-scrollbar {
