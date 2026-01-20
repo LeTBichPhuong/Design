@@ -155,6 +155,37 @@
                         <label>Màu viền</label>
                         <input type="color" id="strokeColor" value="#dec27a">
                     </div>
+                    <div class="menu-input-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 20px;">
+                            <input type="checkbox" id="togglePatchCheckbox" style="width: 20px; height: 20px; cursor: pointer;">
+                            <span style="font-weight: 600;">Hiển thị Patch nền</span>
+                        </label>
+                    </div>
+                    <div class="menu-input-group">
+                        <label style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                            <span>Độ bo góc</span>
+                            <input 
+                                type="number" 
+                                id="cornerRadiusInput" 
+                                value="25" 
+                                min="0" 
+                                max="200" 
+                                style="width: 70px; padding: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; border-radius: 4px; text-align: center;"
+                            >
+                        </label>
+                        <input 
+                            type="range" 
+                            id="cornerRadiusSlider" 
+                            value="25" 
+                            min="0" 
+                            max="200" 
+                            style="width: 100%; margin-top: 8px; background: rgb(92 85 85 / 20%);"
+                        >
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">
+                            <span>0 (vuông)</span>
+                            <span>200 (tròn)</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

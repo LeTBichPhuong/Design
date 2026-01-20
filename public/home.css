@@ -1372,3 +1372,60 @@ body.transforming {
     font-weight: normal;
     font-style: normal;
 }
+
+/* Checkbox styling */
+#togglePatchCheckbox {
+    accent-color: #0067b8;
+}
+
+#togglePatchCheckbox:checked + span {
+    color: #4CAF50;
+}
+
+/* Number input styling */
+#cornerRadiusInput::-webkit-inner-spin-button,
+#cornerRadiusInput::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 30px;
+}
+
+/* Range slider styling */
+#cornerRadiusSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+}
+
+#cornerRadiusSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #0067b8;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#cornerRadiusSlider::-webkit-slider-thumb:hover {
+    background: #0052a3;
+    transform: scale(1.2);
+}
+
+#cornerRadiusSlider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #0067b8;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+#cornerRadiusSlider::-moz-range-thumb:hover {
+    background: #0052a3;
+    transform: scale(1.2);
+}

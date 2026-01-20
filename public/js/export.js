@@ -152,6 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="delete-btn">✕</button>
             `;
 
+            // Trong hàm renderSaved, khi load design:
+
             div.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('delete-btn')) return;
 
@@ -164,11 +166,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const config = typeof d.config === 'string' ? JSON.parse(d.config) : d.config;
 
+                console.log(' Loading design config:', config);
+
                 // Set tọa độ CENTER trước để tránh reset về giữa
                 window.currentTextX = config.x || 0;
                 window.currentTextY = config.y || 0;
                 window.currentPatchWidth = config.patchWidth || 0;
                 window.currentPatchHeight = config.patchHeight || 0;
+                window.currentPatchCornerRadius = config.patchCornerRadius || 25;
+                
+                //'KHÔI PHỤC ROTATION & MANUAL RESIZE
+                if (config.patchRotation !== undefined) {
+                    if (typeof patchRotation !== 'undefined') {
+                        patchRotation = config.patchRotation;
+                    } else {
+                        window.patchRotation = config.patchRotation;
+                    }
+                }
+
+                //'QUAN TRỌNG: RESET hasSetupBg & hasSetupStroke TRƯỚC KHI LOAD
+                // Expose từ home.js
+                if (window.setHasSetupBg) {
+                    window.setHasSetupBg(config.hasPatch === true);
+                }
+                if (window.setHasSetupStroke) {
+                    window.setHasSetupStroke(!!config.strokeColor);
+                }
+
+                setTimeout(() => {
+                    if (window.applyPatchRotation) window.applyPatchRotation();
+                    if (window.updateGroupBorder) window.updateGroupBorder();
+                }, 200);
 
                 // Load ảnh với resize nếu high-res
                 let imageUrl = d.base_image.replace(/^\/+/, '');
@@ -199,14 +227,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     nameInput.value = config.text || '';
                     nameInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-                if (fontFamily) fontFamily.value = config.fontFamily || 'Arial, sans-serif';
+
+                // SET FONT FAMILY (CÓ THỂ CÓ CUSTOM FONT)
+                if (fontFamily) {
+                    if (config.customFontFile) {
+                        let foundOption = null;
+                        for (let i = 0; i < fontFamily.options.length; i++) {
+                            if (fontFamily.options[i].dataset.serverFile === config.customFontFile) {
+                                foundOption = fontFamily.options[i];
+                                break;
+                            }
+                        }
+                        
+                        if (foundOption) {
+                            fontFamily.value = foundOption.value;
+                            console.log('Found custom font option:', foundOption.value);
+                        } else {
+                            const fontName = config.fontFamily.replace(/, sans-serif|, serif|, monospace/g, '').replace(/['"]/g, '');
+                            const option = document.createElement('option');
+                            option.value = `'${fontName}', sans-serif`;
+                            option.textContent = fontName;
+                            option.dataset.serverFile = config.customFontFile;
+                            fontFamily.appendChild(option);
+                            fontFamily.value = option.value;
+                            console.log('Added custom font option:', option.value);
+                        }
+                    } else {
+                        fontFamily.value = config.fontFamily || 'Arial, sans-serif';
+                    }
+                }
+                
                 if (fontSize) fontSize.value = config.fontSize || 80;
                 if (fontSizeInput) fontSizeInput.value = config.fontSize || 80;
                 if (textColor) textColor.value = config.textColor || '#dec27a';
                 if (bgColor) bgColor.value = config.bgColor || '#565559';
                 if (strokeColor) strokeColor.value = config.strokeColor || '#dec27a';
 
-                // Cập nhật trạng thái format
+                //'Cập nhật trạng thái format
                 if (btnBold) {
                     const isBold = config.fontWeight === 'bold';
                     btnBold.classList.toggle('active', isBold);
@@ -223,28 +280,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (window.updateUnderlineState) window.updateUnderlineState(isUnderline);
                 }
 
-                // Lấy serverFile từ option được chọn (nếu có)
+                //'Lấy serverFile từ option đã chọn
                 const selectedOption = fontFamily?.options[fontFamily.selectedIndex];
                 const customFontFile = selectedOption?.dataset?.serverFile || config.customFontFile || null;
 
-                // Cập nhật localStorage
+                console.log('Custom font file:', customFontFile);
+
+                //'Cập nhật localStorage với ĐẦY ĐỦ THÔNG TIN
                 localStorage.setItem('currentDesign', JSON.stringify({
                     name: config.text || '',
                     textX: config.x || 0,
                     textY: config.y || 0,
                     patchWidth: config.patchWidth || 0,
                     patchHeight: config.patchHeight || 0,
+                    patchCornerRadius: config.patchCornerRadius || 0,
+                    patchRotation: config.patchRotation || 0,
+                    isManualResizedPatch: config.isManualResizedPatch || false,
+                    
+                    //'LƯU hasPatch
+                    hasPatch: config.hasPatch === true,
+                    
                     fontFamily: config.fontFamily || 'Arial, sans-serif',
                     fontSize: config.fontSize || 80,
-                    textColor: config.textColor || '#dec27a',
-                    bgColor: config.bgColor || '#565559',
-                    strokeColor: config.strokeColor || '#dec27a',
                     fontWeight: config.fontWeight || 'normal',
                     fontStyle: config.fontStyle || 'normal',
                     textDecoration: config.textDecoration || 'none',
+                    
+                    textColor: config.textColor || '#dec27a',
+                    bgColor: config.bgColor || '#565559',
+                    strokeColor: config.strokeColor || '#dec27a',
+                    
                     isBold: config.fontWeight === 'bold',
                     isItalic: config.fontStyle === 'italic',
                     isUnderline: config.textDecoration === 'underline',
+                    
                     imageDataUrl: window.currentFullResImageUrl || baseImage.src,
                     customFontFile: customFontFile
                 }));
@@ -257,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderSaved(designs);
                 toast(`Thiết kế: ${d.name}`);
             });
-
+            
             div.querySelector('.delete-btn').addEventListener('click', e => {
                 e.stopPropagation();
                 if (window.showConfirm) {
@@ -329,6 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const uploadData = await uploadRes.json();
                     uploadedImagePath = uploadData.path;
                     window.currentFullResImageUrl = '/' + uploadData.path.replace(/^\/+/, '');
+
+                    window.currentBaseImage = uploadData.path;
                 }
 
                 await new Promise(resolve => setTimeout(resolve, 200));
@@ -353,14 +424,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
+                //'LẤY CUSTOM FONT FILE TỪ SELECT
                 const fontFamilySelect = document.getElementById('fontFamily');
                 const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
                 const customFontFile = selectedOption?.dataset?.serverFile || null;
 
+                //'MERGE CONFIG VỚI CUSTOM FONT FILE
                 const configWithFont = {
                     ...config,
                     customFontFile: customFontFile
                 };
+
+                console.log('Saving config:', configWithFont);
 
                 const url = isUpdate ? `/designs/${window.currentDesignId}` : `/designs`;
 
@@ -374,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         name: config.text,
                         base_image: uploadedImagePath,
-                        config: configWithFont,
+                        config: configWithFont, //'GỬI CONFIG ĐẦY ĐỦ
                         export_image: thumbnailPath
                     })
                 });
