@@ -135,6 +135,7 @@ Route::post('/upload-font', function (Illuminate\Http\Request $request) {
         ], 500);
     }
 })->name('upload.font');
+
 // image upload
 Route::post('/upload-image', function (Illuminate\Http\Request $request) {
     $request->validate([
@@ -185,5 +186,5 @@ Route::get('/exports/{filename}', function ($filename) {
     ]);
 })->name('export.short');
 
-// routes/web.php
+// preview upload
 Route::post('/upload-preview', [DesignController::class, 'uploadPreview'])->name('upload.preview');
