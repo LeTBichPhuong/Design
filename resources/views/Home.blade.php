@@ -372,6 +372,7 @@
     <script src="{{ asset('js/export.js') }}"></script>
     <script src="{{ asset('js/user.js') }}"></script>
     <script src="{{ asset('js/responsive.js') }}"></script>
+    <script src="{{ asset('js/preview.js') }}"></script>
 
     @if(session('success'))
         <script>

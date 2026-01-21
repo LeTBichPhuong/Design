@@ -2821,11 +2821,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return hasSetupStroke;
     };
     window.setPatchRotation = function(rotation) {
-    patchRotation = parseFloat(rotation || 0);
-    console.log('✅ setPatchRotation called:', patchRotation);
-};
+        patchRotation = parseFloat(rotation || 0);
+        console.log('setPatchRotation called:', patchRotation);
+    };
 
-window.getPatchRotation = function() {
-    return patchRotation;
-};
+    window.getPatchRotation = function() {
+        return patchRotation;
+    };
 });

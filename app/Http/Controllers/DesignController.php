@@ -1108,4 +1108,49 @@ class DesignController extends Controller
             'b' => hexdec(substr($hex, 4, 2))
         ];
     }
+
+    /**
+     * Upload preview image
+     */
+    public function uploadPreview(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|file|image|max:10240', // 10MB
+        ]);
+
+        try {
+            $file = $request->file('image');
+            
+            // Tạo filename unique
+            $filename = uniqid() . '_' . time() . '.png';
+            
+            // Lưu vào storage/app/public/previews
+            $path = $file->storeAs('previews', $filename, 'public');
+            
+            // Đảm bảo symlink: php artisan storage:link
+            $url = asset('storage/' . $path);
+            
+            \Log::info('Preview uploaded', [
+                'filename' => $filename,
+                'url' => $url
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'filename' => $filename,
+                'path' => 'storage/' . $path
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Upload preview error', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

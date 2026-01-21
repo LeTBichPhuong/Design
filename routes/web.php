@@ -184,3 +184,6 @@ Route::get('/exports/{filename}', function ($filename) {
         'Cache-Control' => 'public, max-age=31536000',
     ]);
 })->name('export.short');
+
+// routes/web.php
+Route::post('/upload-preview', [DesignController::class, 'uploadPreview'])->name('upload.preview');
