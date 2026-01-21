@@ -215,7 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (config.isUnderline) {
                         const metrics = ctx.measureText(upperLine);
                         const textWidth = metrics.width;
-                        const underlineY = y + currentFontSize * 0.1;
+                        const descent = metrics.actualBoundingBoxDescent || currentFontSize * 0.2;
+                        const underlineOffset = descent * 0.3;
+                        const underlineY = y + descent + underlineOffset;
                         const underlineThickness = Math.max(2, currentFontSize / 20);
                         
                         ctx.beginPath();
