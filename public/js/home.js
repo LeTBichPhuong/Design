@@ -281,7 +281,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 baseImage.src = design.imageDataUrl;
                 baseImage.onload = () => {
                     updateSVGViewBox();
-                    setTimeout(() => updateName(), 100);
+                    
+                    // Khôi phục rotation
+                    if (design.patchRotation !== undefined) {
+                        patchRotation = design.patchRotation;
+                        console.log('Loaded rotation from design:', patchRotation);
+                    }
+                    
+                    if (design.isManualResizedPatch !== undefined) {
+                        isManualResizedPatch = design.isManualResizedPatch;
+                    }
+                    
+                    setTimeout(() => {
+                        updateName();
+
+                        // Khôi phục trạng thái element
+                        if (text && bg) {
+                            saveElementState(text, bg); // Lưu rotation vào element
+                            applyPatchRotation();
+                        }
+                    }, 100);
                 };
                 
                 // Ẩn lưới upload
@@ -307,6 +326,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Gọi load saved design
+    function saveElementState(textElement, bgElement) {
+        if (!textElement) return;
+        
+        textElement.dataset.rotation = patchRotation;
+        textElement.dataset.centerX = window.currentTextX;
+        textElement.dataset.centerY = window.currentTextY;
+        textElement.dataset.patchWidth = window.currentPatchWidth;
+        textElement.dataset.patchHeight = window.currentPatchHeight;
+        textElement.dataset.manualResized = isManualResizedPatch;
+        textElement.dataset.bold = isBold;
+        textElement.dataset.italic = isItalic;
+        textElement.dataset.underline = isUnderline;
+        
+        if (bgElement) {
+            bgElement.dataset.rotation = patchRotation;
+            bgElement.dataset.centerX = window.currentTextX;
+            bgElement.dataset.centerY = window.currentTextY;
+        }
+        
+        console.log('Saved state for element:', {
+            rotation: patchRotation,
+            x: window.currentTextX,
+            y: window.currentTextY
+        });
+    }
+
+    // Load state từ element
+    function loadElementState(textElement, bgElement) {
+        if (!textElement) return;
+        // Lấy rotation từ data-attribute
+        try {
+            const saved = localStorage.getItem('currentDesign');
+            if (saved) {
+                const design = JSON.parse(saved);
+                if (design.patchRotation !== undefined) {
+                    patchRotation = design.patchRotation;
+                    console.log('Loaded rotation from localStorage:', patchRotation);
+                }
+            }
+        } catch (e) {
+            console.log('No saved rotation in localStorage');
+        }
+        
+        // Nếu chưa có rotation từ localStorage thì lấy từ dataset
+        if (patchRotation === 0 && textElement.dataset.rotation) {
+            patchRotation = parseFloat(textElement.dataset.rotation || 0);
+            console.log('Loaded rotation from dataset:', patchRotation);
+        }
+        
+        window.currentTextX = parseFloat(textElement.dataset.centerX || 0);
+        window.currentTextY = parseFloat(textElement.dataset.centerY || 0);
+        window.currentPatchWidth = parseFloat(textElement.dataset.patchWidth || 400);
+        window.currentPatchHeight = parseFloat(textElement.dataset.patchHeight || 100);
+        isManualResizedPatch = textElement.dataset.manualResized === 'true';
+        isBold = textElement.dataset.bold === 'true';
+        isItalic = textElement.dataset.italic === 'true';
+        isUnderline = textElement.dataset.underline === 'true';
+    }
+
+    // Gọi load saved design
     function saveDesign() {
         try {
             const fontFamilySelect = document.getElementById('fontFamily');
@@ -319,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 textY: window.currentTextY,
                 patchWidth: window.currentPatchWidth,
                 patchHeight: window.currentPatchHeight,
-                patchRotation: patchRotation || 0,
+                patchRotation: patchRotation || 0, // ✅ ĐÃ LƯU
                 isManualResizedPatch: isManualResizedPatch || false,
                 patchCornerRadius: currentCornerRadius || 25,
                 
@@ -344,7 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             localStorage.setItem('currentDesign', JSON.stringify(design));
-            console.log('Saved design - hasPatch:', hasSetupBg, design);
+            console.log('Saved design - rotation:', patchRotation, design); // ✅ KIỂM TRA
+            
+            if (text && bg) {
+                saveElementState(text, bg);
+            }
         } catch (e) {
             console.error('Error saving design:', e);
         }
@@ -369,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.currentTextY = 0;
             window.currentPatchWidth = 0;
             window.currentPatchHeight = 0;
-
+            patchRotation = 0;
             if (fontSizeInput) fontSizeInput.value = '80';
             if (fontFamily) fontFamily.value = 'Arial, sans-serif';
             if (textColor) textColor.value = '#dec27a';
@@ -2005,13 +2088,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     startGroupResize(e, pos);
                 });
-
-                handle.addEventListener('mouseenter', () => {
-                    const isHorizontal = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(pos);
-                    if (isHorizontal) {
-                        handle.setAttribute('data-tooltip', 'Kéo để tự động xuống dòng');
-                    }
-                });
+                            handle.addEventListener('mouseenter', () => {
+                const isHorizontal = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(pos);
+                if (isHorizontal) {
+                    handle.setAttribute('data-tooltip', 'Kéo để tự động xuống dòng');
+                }
+            });
                 borderGroup.appendChild(handle);
             });
             
@@ -2050,6 +2132,8 @@ document.addEventListener('DOMContentLoaded', () => {
             borderGroup.appendChild(rotationHandle);
             
             if (svg) svg.appendChild(borderGroup);
+
+
         }
 
         function startGroupResize(e, position) {
@@ -2736,4 +2820,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.getHasSetupStroke = function() {
         return hasSetupStroke;
     };
+    window.setPatchRotation = function(rotation) {
+    patchRotation = parseFloat(rotation || 0);
+    console.log('✅ setPatchRotation called:', patchRotation);
+};
+
+window.getPatchRotation = function() {
+    return patchRotation;
+};
 });

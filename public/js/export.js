@@ -176,11 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // khôi phục rotation
                 if (config.patchRotation !== undefined) {
-                    if (typeof patchRotation !== 'undefined') {
-                        patchRotation = config.patchRotation;
-                    } else {
-                        window.patchRotation = config.patchRotation;
+                    if (typeof window.setPatchRotation === 'function') {
+                        window.setPatchRotation(config.patchRotation);
                     }
+                    
+                    console.log('Loaded rotation from config:', config.patchRotation);
                 }
 
                 // Cập nhật trạng thái hasPatch và strokeColor
