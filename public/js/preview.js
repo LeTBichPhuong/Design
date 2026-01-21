@@ -185,13 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Vẽ text chính
                     ctx.fillText(upperLine, config.currentTextX, y);
                     
-                    // Bold: vẽ thêm layer để đậm hơn
-                    // if (config.isBold) {
-                    //     ctx.fillText(upperLine, config.currentTextX + 1, y);
-                    //     ctx.fillText(upperLine, config.currentTextX, y + 1);
-                    //     ctx.fillText(upperLine, config.currentTextX + 1, y + 1);
-                    // }
-                    
                     // Underline
                     if (config.isUnderline) {
                         const metrics = ctx.measureText(upperLine);
