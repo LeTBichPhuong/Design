@@ -2005,7 +2005,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     startGroupResize(e, pos);
                 });
-                
+
+                handle.addEventListener('mouseenter', () => {
+                    const isHorizontal = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(pos);
+                    if (isHorizontal) {
+                        handle.setAttribute('data-tooltip', 'Kéo để tự động xuống dòng');
+                    }
+                });
                 borderGroup.appendChild(handle);
             });
             
@@ -2044,13 +2050,6 @@ document.addEventListener('DOMContentLoaded', () => {
             borderGroup.appendChild(rotationHandle);
             
             if (svg) svg.appendChild(borderGroup);
-
-            handle.addEventListener('mouseenter', () => {
-                const isHorizontal = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(pos);
-                if (isHorizontal) {
-                    handle.setAttribute('data-tooltip', 'Kéo để tự động xuống dòng');
-                }
-            });
         }
 
         function startGroupResize(e, position) {
