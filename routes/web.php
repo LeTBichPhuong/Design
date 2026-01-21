@@ -29,7 +29,7 @@ Route::delete('/designs/{design}', [DesignController::class, 'destroy']);
 Route::put('/designs/{design}', [DesignController::class, 'update']);
 Route::post('/designs/{design}/export', [DesignController::class, 'export']);
 
-// Route để serve ảnh từ storage/designs
+// Lấy file design từ storage
 Route::get('/designs/{filename}', function ($filename) {
     // Kiểm tra định dạng file hợp lệ
     if (!preg_match('/^[\w\-\.]+\.(png|jpg|jpeg|gif)$/i', $filename)) {
@@ -78,7 +78,7 @@ Route::post('/upload-font', function (Illuminate\Http\Request $request) {
                         'application/font-woff2',
                         'application/x-font-ttf',
                         'application/x-font-otf',
-                        'application/octet-stream' // Một số font có MIME này
+                        'application/octet-stream'
                     ];
                     
                     $mime = $value->getMimeType();
@@ -87,7 +87,6 @@ Route::post('/upload-font', function (Illuminate\Http\Request $request) {
                             'mime' => $mime,
                             'extension' => $extension
                         ]);
-                        // Cho phép nếu extension đúng
                     }
                 }
             ]
