@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * BƯỚC 1: Tạo blob URL cho ảnh với patch/text
+     * Tạo blob URL cho ảnh với patch/text
      */
     async function generatePreviewBlob() {
         try {
@@ -75,13 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const imgWidth = baseImage.naturalWidth || baseImage.width;
             const imgHeight = baseImage.naturalHeight || baseImage.height;
             
-            console.log('🖼️ Generating preview:', { 
+            console.log('Tạo view preview:', {
                 imgWidth, 
                 imgHeight, 
                 hasText: !!config.currentName,
                 hasPatch: config.hasSetupBg 
             });
-            
+
             // Tạo canvas để render
             const canvas = document.createElement('canvas');
             canvas.width = imgWidth;
@@ -99,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
-            console.log('✓ Đã vẽ ảnh gốc');
             
             // Vẽ patch nếu có
             if (config.hasSetupBg && bg && bg.style.display !== 'none') {
@@ -114,15 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const scaleFactor = imgWidth / 11417;
                 const strokeWidth = 12 * scaleFactor;
-                
-                console.log('🎨 Vẽ patch:', { 
-                    patchX, 
-                    patchY, 
-                    patchWidth, 
-                    patchHeight, 
-                    rx,
-                    rotation: config.patchRotation 
-                });
                 
                 ctx.save();
                 
@@ -157,21 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 ctx.restore();
-                console.log('✓ Đã vẽ patch');
             }
             
             // Vẽ text
             if (text && text.style.display !== 'none' && config.currentName && config.currentName.trim() !== '') {
                 const currentFontSize = parseInt(config.fontSizeInput?.value || config.fontSize?.value || 80);
                 const textColorHex = config.textColor?.value || '#dec27a';
-                
-                console.log('📝 Vẽ text:', { 
-                    text: config.currentName, 
-                    fontSize: currentFontSize,
-                    bold: config.isBold,
-                    italic: config.isItalic,
-                    underline: config.isUnderline
-                });
                 
                 ctx.save();
                 
@@ -230,14 +211,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 ctx.restore();
-                console.log('✓ Đã vẽ text');
             }
             
             // Convert canvas to blob
             return new Promise((resolve, reject) => {
                 canvas.toBlob((blob) => {
                     if (blob) {
-                        console.log('✓ Preview blob generated:', blob.size, 'bytes');
                         resolve(blob);
                     } else {
                         reject(new Error('Không thể tạo blob'));
@@ -246,13 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
         } catch (error) {
-            console.error('❌ Generate preview error:', error);
+            console.error('Lỗi tạo preview:', error);
             throw error;
         }
     }
 
     /**
-     * BƯỚC 2: Upload preview blob lên server và trả về URL thật
+     * Upload preview blob lên server và trả về URL thật
      */
     async function uploadPreviewToServer(blob) {
         try {
@@ -295,13 +274,13 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
         } catch (error) {
-            console.error('❌ Upload preview error:', error);
+            console.error('Preview upload error:', error);
             throw error;
         }
     }
 
     /**
-     * BƯỚC 3: Khởi tạo context menu
+     * Khởi tạo context menu
      */
     function initContextMenu() {
         const baseImage = document.getElementById('baseImage');
@@ -316,8 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             try {
-                console.log('🖱️ Context menu triggered');
-                
                 const config = getDesignConfig();
                 
                 // Kiểm tra có text không
@@ -330,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Hiện loading
                 if (window.showToast) {
-                    window.showToast('⏳ Đang tạo ảnh xem trước...', 'info');
+                    window.showToast('Tạo ảnh xem trước...', 'info');
                 }
                 
                 // Tạo preview blob
@@ -339,25 +316,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Upload lên server
                 const result = await uploadPreviewToServer(blob);
                 
-                console.log('✅ Preview saved:', result);
+                console.log('Preview saved:', result);
                 
                 // Mở trong tab mới
                 window.open(result.url, '_blank');
                 
-                // Copy URL vào clipboard
-                try {
-                    await navigator.clipboard.writeText(result.url);
-                    if (window.showToast) {
-                        window.showToast('✓ Đã mở ảnh & copy link vào clipboard', 'success');
-                    }
-                } catch (err) {
-                    if (window.showToast) {
-                        window.showToast('✓ Đã mở ảnh xem trước', 'success');
-                    }
+                if (window.showToast) {
+                    window.showToast('Đã mở ảnh xem trước', 'success');
                 }
                 
             } catch (error) {
-                console.error('❌ Context menu error:', error);
+                console.error('Context menu error:', error);
                 if (window.showToast) {
                     window.showToast(error.message || 'Không thể mở ảnh xem trước', 'error');
                 }
@@ -367,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         baseImage.style.cursor = 'context-menu';
         baseImage.title = 'Click chuột phải để tạo ảnh xem trước (có thể chia sẻ link)';
         
-        console.log('✅ Context menu initialized');
+        console.log('Context menu initialized');
     }
 
     // Khởi tạo khi DOM ready
@@ -381,5 +350,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.generatePreviewBlob = generatePreviewBlob;
     window.uploadPreviewToServer = uploadPreviewToServer;
 
-    console.log('✅ preview.js loaded');
+    console.log('preview.js loaded');
 });
