@@ -267,7 +267,7 @@ class DesignController extends Controller
                     'height' => $imageHeight
                 ]);
 
-                \Log::info('🔧 EXPORT CONFIG RECEIVED', [
+                \Log::info('EXPORT CONFIG RECEIVED', [
                     'text' => $cfg['text'] ?? '',
                     'fontSize' => $cfg['fontSize'] ?? 0,
                     'fontFamily' => $cfg['fontFamily'] ?? '',
@@ -354,7 +354,7 @@ class DesignController extends Controller
 
                     $totalLines = count($lineBBoxes);
 
-                    // ✅ Tính maxLineHeight từ patchHeight browser đã gửi
+                    // Tính maxLineHeight từ patchHeight browser đã gửi
                     if ($patchHeight > 0) {
                         $textBlockHeight = $patchHeight - ($scaledPaddingY * 2);
                         
@@ -364,8 +364,8 @@ class DesignController extends Controller
                             $maxLineHeight = $textBlockHeight;
                         }
                     } else {
-                        // ❌ FALLBACK: Chỉ khi browser không gửi patchHeight
-                        \Log::warning('⚠️ Browser did not send patchHeight, calculating from GD');
+                        // Chỉ khi browser không gửi patchHeight
+                        \Log::warning('Browser did not send patchHeight, calculating from GD');
                         
                         $patchSize = $this->calculatePatchSize($lines, $fontSize, $fontPath, $scaleFactor);
                         $patchWidth = $patchSize['width'];
@@ -374,13 +374,14 @@ class DesignController extends Controller
                         $lineHeight = $patchSize['lineHeight'];
                     }
 
-                    \Log::info('✅ Using BROWSER measurements (100% accurate preview)', [
+                    \Log::info('Using BROWSER measurements (100% accurate preview)', [
                         'patchWidth' => $patchWidth,
                         'patchHeight' => $patchHeight,
                         'lineHeight' => $lineHeight,
                         'maxLineHeight' => $maxLineHeight,
                         'totalLines' => $totalLines
                     ]);
+
                     // Nếu có rotation
                     if (abs($patchRotation) > 0.1) {
                         \Log::info('Rendering with rotation', ['angle' => $patchRotation]);
@@ -836,196 +837,195 @@ class DesignController extends Controller
      * TÌM FONT FILE - HỖ TRỢ BOLD/ITALIC/CUSTOM FONT
      */
     private function findFontFile($fontFamily, $fontWeight = 'normal', $fontStyle = 'normal', $customFontFile = null)
-{
-    \Log::info('findFontFile - START', [
-        'fontFamily' => $fontFamily,
-        'fontWeight' => $fontWeight,
-        'fontStyle' => $fontStyle,
-        'customFontFile' => $customFontFile
-    ]);
-
-    // ƯU TIÊN 1: CUSTOM FONT FILE (nếu có)
-    if (!empty($customFontFile)) {
-        $customFontPath = public_path('fonts/' . $customFontFile);
-        
-        \Log::info('Checking custom font file', [
-            'customFontFile' => $customFontFile,
-            'fullPath' => $customFontPath,
-            'exists' => file_exists($customFontPath)
+    {
+        \Log::info('findFontFile - START', [
+            'fontFamily' => $fontFamily,
+            'fontWeight' => $fontWeight,
+            'fontStyle' => $fontStyle,
+            'customFontFile' => $customFontFile
         ]);
-        
-        if (file_exists($customFontPath)) {
-            \Log::info('Using custom font from customFontFile');
-            // CUSTOM FONT: Bỏ QUA bold/italic style key vì chỉ có 1 file
-            // GD sẽ dùng font transform để tạo hiệu ứng bold/italic
-            return $customFontPath;
-        } else {
-            \Log::warning('Custom font file not found, trying alternatives');
-        }
-    }
 
-    // Chuẩn hóa fontFamily
-    if (empty($fontFamily) || $fontFamily === 'null') {
-        \Log::warning('fontFamily is empty, using fallback');
-        return $this->getFallbackFont();
-    }
-
-    $fontFamily = trim($fontFamily);
-    $fontFamily = str_replace(["'", '"', ', sans-serif', ', serif', ', monospace'], '', $fontFamily);
-    $fontFamily = trim($fontFamily);
-    $fontFamilyLower = strtolower($fontFamily);
-    
-    // XÁC ĐỊNH STYLE KEY (chỉ cho SYSTEM FONTS)
-    $isBold = ($fontWeight === 'bold');
-    $isItalic = ($fontStyle === 'italic');
-    
-    $styleKey = 'normal';
-    if ($isBold && $isItalic) {
-        $styleKey = 'bold-italic';
-    } elseif ($isBold) {
-        $styleKey = 'bold';
-    } elseif ($isItalic) {
-        $styleKey = 'italic';
-    }
-    
-    \Log::info('Font style determined', [
-        'styleKey' => $styleKey,
-        'isBold' => $isBold,
-        'isItalic' => $isItalic
-    ]);
-    
-    // ƯU TIÊN 2: TÌM FONT CUSTOM TRONG public/fonts/ (theo tên)
-    $fontsDir = public_path('fonts/');
-    if (is_dir($fontsDir)) {
-        $files = scandir($fontsDir);
-        $fontFamilySearch = str_replace([' ', '-', '_', '.'], '', $fontFamilyLower);
-        
-        \Log::info('Scanning fonts directory', [
-            'dir' => $fontsDir,
-            'searchFor' => $fontFamilySearch
-        ]);
-        
-        foreach ($files as $file) {
-            if ($file === '.' || $file === '..') continue;
+        // Ưu tiên 1: font custom upload từ người dùng
+        if (!empty($customFontFile)) {
+            $customFontPath = public_path('fonts/' . $customFontFile);
             
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['ttf', 'otf', 'woff', 'woff2'])) continue;
-            
-            $originalName = $file;
-            
-            // Format: uniqid_timestamp_originalname.ttf
-            if (preg_match('/^[a-f0-9]+_\d+_(.+)$/i', $file, $matches)) {
-                $originalName = $matches[1];
-            }
-            
-            $originalName = pathinfo($originalName, PATHINFO_FILENAME);
-            $originalNameLower = strtolower($originalName);
-            $originalNameSearch = str_replace([' ', '-', '_', '.'], '', $originalNameLower);
-            
-            $isMatch = (
-                $originalNameSearch === $fontFamilySearch ||
-                strpos($originalNameSearch, $fontFamilySearch) !== false ||
-                strpos($fontFamilySearch, $originalNameSearch) !== false
-            );
-            
-            if ($isMatch) {
-                $fontPath = $fontsDir . $file;
-                if (file_exists($fontPath)) {
-                    \Log::info('Found custom font by name - using single file for all styles', [
-                        'file' => $file,
-                        'path' => $fontPath
-                    ]);
-                    // CUSTOM FONT: Trả về file duy nhất, GD sẽ tự xử lý bold/italic
-                    return $fontPath;
-                }
-            }
-        }
-    }
-    
-    // ƯU TIÊN 3: FONT HỆ THỐNG VỚI VARIANTS (BOLD/ITALIC)
-    $fontMap = [
-        'arial' => [
-            'normal' => 'arial.ttf',
-            'bold' => 'arialbd.ttf',
-            'italic' => 'ariali.ttf',
-            'bold-italic' => 'arialbi.ttf',
-        ],
-        'times new roman' => [
-            'normal' => 'times.ttf',
-            'bold' => 'timesbd.ttf',
-            'italic' => 'timesi.ttf',
-            'bold-italic' => 'timesbi.ttf',
-        ],
-        'courier new' => [
-            'normal' => 'cour.ttf',
-            'bold' => 'courbd.ttf',
-            'italic' => 'couri.ttf',
-            'bold-italic' => 'courbi.ttf',
-        ],
-        'verdana' => [
-            'normal' => 'verdana.ttf',
-            'bold' => 'verdanab.ttf',
-            'italic' => 'verdanai.ttf',
-            'bold-italic' => 'verdanaz.ttf',
-        ],
-        'georgia' => [
-            'normal' => 'georgia.ttf',
-            'bold' => 'georgiab.ttf',
-            'italic' => 'georgiai.ttf',
-            'bold-italic' => 'georgiaz.ttf',
-        ],
-        'trebuchet ms' => [
-            'normal' => 'trebuc.ttf',
-            'bold' => 'trebucbd.ttf',
-            'italic' => 'trebucit.ttf',
-            'bold-italic' => 'trebucbi.ttf',
-        ],
-        'impact' => [
-            'normal' => 'impact.ttf',
-        ],
-        'comic sans ms' => [
-            'normal' => 'comic.ttf',
-            'bold' => 'comicbd.ttf',
-        ],
-    ];
-    
-    foreach ($fontMap as $name => $styles) {
-        if ($fontFamilyLower === $name || strpos($fontFamilyLower, $name) !== false) {
-            // ƯU TIÊN LẤY STYLE ĐÚNG (BOLD/ITALIC)
-            $filename = $styles[$styleKey] ?? $styles['normal'];
-            
-            $path = public_path('fonts/' . $filename);
-            
-            \Log::info('Checking system font', [
-                'name' => $name,
-                'styleKey' => $styleKey,
-                'filename' => $filename,
-                'path' => $path,
-                'exists' => file_exists($path)
+            \Log::info('Checking custom font file', [
+                'customFontFile' => $customFontFile,
+                'fullPath' => $customFontPath,
+                'exists' => file_exists($customFontPath)
             ]);
             
-            if (file_exists($path)) {
-                \Log::info('Found system font with correct style');
-                return $path;
+            if (file_exists($customFontPath)) {
+                \Log::info('Using custom font from customFontFile');
+                // GD sẽ dùng font transform để tạo hiệu ứng bold/italic
+                return $customFontPath;
+            } else {
+                \Log::warning('Custom font file not found, trying alternatives');
             }
+        }
+
+        // Chuẩn hóa fontFamily
+        if (empty($fontFamily) || $fontFamily === 'null') {
+            \Log::warning('fontFamily is empty, using fallback');
+            return $this->getFallbackFont();
+        }
+
+        $fontFamily = trim($fontFamily);
+        $fontFamily = str_replace(["'", '"', ', sans-serif', ', serif', ', monospace'], '', $fontFamily);
+        $fontFamily = trim($fontFamily);
+        $fontFamilyLower = strtolower($fontFamily);
+        
+        // Xác định styleKey dựa trên weight và style
+        $isBold = ($fontWeight === 'bold');
+        $isItalic = ($fontStyle === 'italic');
+        
+        $styleKey = 'normal';
+        if ($isBold && $isItalic) {
+            $styleKey = 'bold-italic';
+        } elseif ($isBold) {
+            $styleKey = 'bold';
+        } elseif ($isItalic) {
+            $styleKey = 'italic';
+        }
+        
+        \Log::info('Font style determined', [
+            'styleKey' => $styleKey,
+            'isBold' => $isBold,
+            'isItalic' => $isItalic
+        ]);
+        
+        // Ưu tiên 2: tìm font custom trong thư mục fonts/
+        $fontsDir = public_path('fonts/');
+        if (is_dir($fontsDir)) {
+            $files = scandir($fontsDir);
+            $fontFamilySearch = str_replace([' ', '-', '_', '.'], '', $fontFamilyLower);
             
-            // FALLBACK NẾU KHÔNG CÓ VARIANT: LẤY NORMAL
-            if ($styleKey !== 'normal' && isset($styles['normal'])) {
-                $normalPath = public_path('fonts/' . $styles['normal']);
-                if (file_exists($normalPath)) {
-                    \Log::warning('Font variant not found, using normal', [
-                        'requested' => $styleKey,
-                        'using' => 'normal'
-                    ]);
-                    return $normalPath;
+            \Log::info('Scanning fonts directory', [
+                'dir' => $fontsDir,
+                'searchFor' => $fontFamilySearch
+            ]);
+            
+            foreach ($files as $file) {
+                if ($file === '.' || $file === '..') continue;
+                
+                $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                if (!in_array($ext, ['ttf', 'otf', 'woff', 'woff2'])) continue;
+                
+                $originalName = $file;
+                
+                // Format: uniqid_timestamp_originalname.ttf
+                if (preg_match('/^[a-f0-9]+_\d+_(.+)$/i', $file, $matches)) {
+                    $originalName = $matches[1];
+                }
+                
+                $originalName = pathinfo($originalName, PATHINFO_FILENAME);
+                $originalNameLower = strtolower($originalName);
+                $originalNameSearch = str_replace([' ', '-', '_', '.'], '', $originalNameLower);
+                
+                $isMatch = (
+                    $originalNameSearch === $fontFamilySearch ||
+                    strpos($originalNameSearch, $fontFamilySearch) !== false ||
+                    strpos($fontFamilySearch, $originalNameSearch) !== false
+                );
+                
+                if ($isMatch) {
+                    $fontPath = $fontsDir . $file;
+                    if (file_exists($fontPath)) {
+                        \Log::info('Found custom font by name - using single file for all styles', [
+                            'file' => $file,
+                            'path' => $fontPath
+                        ]);
+                        // Trả về file duy nhất, GD sẽ tự xử lý bold/italic
+                        return $fontPath;
+                    }
                 }
             }
         }
+        
+        // Ưu tiên 3: tìm font hệ thống đã định nghĩa sẵn
+        $fontMap = [
+            'arial' => [
+                'normal' => 'arial.ttf',
+                'bold' => 'arialbd.ttf',
+                'italic' => 'ariali.ttf',
+                'bold-italic' => 'arialbi.ttf',
+            ],
+            'times new roman' => [
+                'normal' => 'times.ttf',
+                'bold' => 'timesbd.ttf',
+                'italic' => 'timesi.ttf',
+                'bold-italic' => 'timesbi.ttf',
+            ],
+            'courier new' => [
+                'normal' => 'cour.ttf',
+                'bold' => 'courbd.ttf',
+                'italic' => 'couri.ttf',
+                'bold-italic' => 'courbi.ttf',
+            ],
+            'verdana' => [
+                'normal' => 'verdana.ttf',
+                'bold' => 'verdanab.ttf',
+                'italic' => 'verdanai.ttf',
+                'bold-italic' => 'verdanaz.ttf',
+            ],
+            'georgia' => [
+                'normal' => 'georgia.ttf',
+                'bold' => 'georgiab.ttf',
+                'italic' => 'georgiai.ttf',
+                'bold-italic' => 'georgiaz.ttf',
+            ],
+            'trebuchet ms' => [
+                'normal' => 'trebuc.ttf',
+                'bold' => 'trebucbd.ttf',
+                'italic' => 'trebucit.ttf',
+                'bold-italic' => 'trebucbi.ttf',
+            ],
+            'impact' => [
+                'normal' => 'impact.ttf',
+            ],
+            'comic sans ms' => [
+                'normal' => 'comic.ttf',
+                'bold' => 'comicbd.ttf',
+            ],
+        ];
+        
+        foreach ($fontMap as $name => $styles) {
+            if ($fontFamilyLower === $name || strpos($fontFamilyLower, $name) !== false) {
+                // Tìm variant phù hợp
+                $filename = $styles[$styleKey] ?? $styles['normal'];
+                
+                $path = public_path('fonts/' . $filename);
+                
+                \Log::info('Checking system font', [
+                    'name' => $name,
+                    'styleKey' => $styleKey,
+                    'filename' => $filename,
+                    'path' => $path,
+                    'exists' => file_exists($path)
+                ]);
+                
+                if (file_exists($path)) {
+                    \Log::info('Found system font with correct style');
+                    return $path;
+                }
+                
+                // Fallback về normal nếu không tìm thấy
+                if ($styleKey !== 'normal' && isset($styles['normal'])) {
+                    $normalPath = public_path('fonts/' . $styles['normal']);
+                    if (file_exists($normalPath)) {
+                        \Log::warning('Font variant not found, using normal', [
+                            'requested' => $styleKey,
+                            'using' => 'normal'
+                        ]);
+                        return $normalPath;
+                    }
+                }
+            }
+        }
+        
+        \Log::warning('No font found, using fallback');
+        return $this->getFallbackFont();
     }
-    
-    \Log::warning('No font found, using fallback');
-    return $this->getFallbackFont();
-}
 
     /**
      * Lấy font mặc định

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let hasSetupBg = false;     // Người dùng đã chọn màu nền chưa
     let hasSetupStroke = false; // Người dùng đã chọn màu viền chưa
     // Biến lưu corner radius
-    let currentCornerRadius = 25; // Base value (sẽ scale khi render)
+    let currentCornerRadius = 25;   
     let currentPaddingX = 60;
     let currentPaddingY = 30; 
     
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isEditingExistingDesign = window.currentDesignId !== null && window.currentDesignId !== undefined;
             
             if (!hasNameParam && !isEditingExistingDesign) {
-                console.log('⚠️ Fresh page load without active design - clearing localStorage & showing upload grid');
+                console.log('Fresh page load without active design - clearing localStorage & showing upload grid');
                 
                 hasSetupBg = false;
                 hasSetupStroke = false;
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // nếu đến đây thì load design bình thường
-            console.log('✅ Loading saved design with image', {
+            console.log('Loading saved design with image', {
                 hasNameParam: hasNameParam,
                 currentDesignId: window.currentDesignId
             });
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         console.log('Set hasSetupBg:', hasSetupBg);
     };
-    
+        
     // Gọi load patch state
     window.setPatchCornerRadius = function(value) {
         currentCornerRadius = value;
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (strokeColor) {
         strokeColor.addEventListener('input', () => {
-            hasSetupStroke = true; // Đánh dấu đã tự chọn màu viền
+            hasSetupStroke = true;  // Đánh dấu đã tự chọn màu viền
             console.log('User selected stroke color - hasSetupStroke:', hasSetupStroke);
             updateName();
             saveDesign();
@@ -707,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+        
     // Corner radius sync
     if (cornerRadiusSlider && cornerRadiusInput) {
         // Sync slider → input
@@ -748,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveDesign();
         });
     }
+
     // Padding sync
     const paddingXSlider = document.getElementById('paddingXSlider');
     const paddingXInput = document.getElementById('paddingXInput');
@@ -825,6 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveDesign();
         });
     }
+
     // Kéo thả patch
     let dragStartX = 0;
     let dragStartY = 0;
@@ -909,56 +911,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function calculateMultiLinePatchSize(lines, fontSize, fontFamily, isBold, isItalic, scaleFactor) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    const fontWeight = isBold ? 'bold' : 'normal';
-    const fontStyle = isItalic ? 'italic' : 'normal';
-    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-    
-    let maxLineWidth = 0;
-    let maxLineHeight = 0;
-    
-    lines.forEach((line, index) => {
-        if (line.trim() !== '') {
-            const metrics = ctx.measureText(line.toUpperCase());
-            const lineWidth = metrics.width;
-            maxLineWidth = Math.max(maxLineWidth, lineWidth);
-            
-            if (index === 0 || maxLineHeight === 0) {
-                const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-                if (actualHeight > 0) {
-                    maxLineHeight = actualHeight;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const fontWeight = isBold ? 'bold' : 'normal';
+        const fontStyle = isItalic ? 'italic' : 'normal';
+        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+        
+        let maxLineWidth = 0;
+        let maxLineHeight = 0;
+        
+        lines.forEach((line, index) => {
+            if (line.trim() !== '') {
+                const metrics = ctx.measureText(line.toUpperCase());
+                const lineWidth = metrics.width;
+                maxLineWidth = Math.max(maxLineWidth, lineWidth);
+                
+                if (index === 0 || maxLineHeight === 0) {
+                    const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+                    if (actualHeight > 0) {
+                        maxLineHeight = actualHeight;
+                    }
                 }
             }
+        });
+        
+        if (maxLineHeight === 0) {
+            maxLineHeight = fontSize;
         }
-    });
-    
-    if (maxLineHeight === 0) {
-        maxLineHeight = fontSize;
+        
+        const lineHeight = fontSize * 1.15;
+        const totalLines = lines.length;
+        const textBlockHeight = (totalLines > 1) 
+            ? ((totalLines - 1) * lineHeight + maxLineHeight)
+            : maxLineHeight;
+        
+        //  Áp dụng padding
+        const paddingX = window.currentPaddingX || currentPaddingX || 60;
+        const paddingY = window.currentPaddingY || currentPaddingY || 30;
+        
+        const scaledPaddingX = paddingX * scaleFactor;
+        const scaledPaddingY = paddingY * scaleFactor;
+        
+        return {
+            width: maxLineWidth + scaledPaddingX * 2,
+            height: textBlockHeight + scaledPaddingY * 2,
+            textWidth: maxLineWidth,
+            textHeight: textBlockHeight,
+            lineCount: totalLines
+        };
     }
-    
-    const lineHeight = fontSize * 1.15;
-    const totalLines = lines.length;
-    const textBlockHeight = (totalLines > 1) 
-        ? ((totalLines - 1) * lineHeight + maxLineHeight)
-        : maxLineHeight;
-    
-    // ✅ DÙNG DYNAMIC PADDING
-    const paddingX = window.currentPaddingX || currentPaddingX || 60;
-    const paddingY = window.currentPaddingY || currentPaddingY || 30;
-    
-    const scaledPaddingX = paddingX * scaleFactor;
-    const scaledPaddingY = paddingY * scaleFactor;
-    
-    return {
-        width: maxLineWidth + scaledPaddingX * 2,
-        height: textBlockHeight + scaledPaddingY * 2,
-        textWidth: maxLineWidth,
-        textHeight: textBlockHeight,
-        lineCount: totalLines
-    };
-}
+
     // Cập nhật tên hiển thị
     function updateName() {
         if (!text || !bg || !baseImage) return;
@@ -1144,8 +1147,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof saveDesign === 'function') saveDesign();
     }
 
+    // Hàm cập nhật tên hiển thị ra bên ngoài
     window.updateName = updateName;
-    
+        
     // Inline edit
     let isEditingInline = false;
 
@@ -1423,939 +1427,938 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('mousedown', e => e.stopPropagation());
         });
 
-    openPanel(currentPanelId);
-    
-    // Đóng panel
-    window.addEventListener('resize', () => {
+        // Mở panel ban đầu
+        openPanel(currentPanelId);
+        
+        // Đóng panel
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                closePanel();
+            } else {
+                openPanel(currentPanelId);
+            }
+        });
+        
+        // Mở/đóng panel theo kích thước ban đầu
         if (window.innerWidth <= 768) {
             closePanel();
-        } else {
-            openPanel(currentPanelId);
         }
-    });
-    
-    // Mở/đóng panel theo kích thước ban đầu
-    if (window.innerWidth <= 768) {
-        closePanel();
-    }
 
-    // Upload font custom
-    const uploadFontBtn = document.getElementById('uploadFontBtn');
-    const fontFileInput = document.getElementById('fontFileInput');
-    const fontFamilySelect = document.getElementById('fontFamily');
+        // Upload font custom
+        const uploadFontBtn = document.getElementById('uploadFontBtn');
+        const fontFileInput = document.getElementById('fontFileInput');
+        const fontFamilySelect = document.getElementById('fontFamily');
 
-    // Danh sách font custom đã lưu (từ localStorage)
-    let customFonts = JSON.parse(localStorage.getItem('customFonts') || '[]');
+        // Danh sách font custom đã lưu (từ localStorage)
+        let customFonts = JSON.parse(localStorage.getItem('customFonts') || '[]');
 
-    // Hàm thêm font vào document và select
-    function addCustomFont(fontName, fontUrl, serverFileName) {
-        
-        // Thêm @font-face động
-        const style = document.createElement('style');
-        style.textContent = `
-            @font-face {
-                font-family: '${fontName}';
-                src: url('${fontUrl}') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Thêm vào select (nếu chưa có)
-        if (!fontFamilySelect.querySelector(`option[value="'${fontName}', sans-serif"]`)) {
-            const option = document.createElement('option');
-            option.value = `'${fontName}', sans-serif`;
-            option.textContent = fontName;
-            option.dataset.serverFile = serverFileName;
-            fontFamilySelect.appendChild(option);
-        }
-    }
-
-    // Load tất cả font custom từ localStorage khi trang load
-    if (customFonts.length > 0) {
-        customFonts.forEach(font => {
-            addCustomFont(font.name, font.url, font.serverFileName);
-        });
-    }
-
-    // Xử lý nút tải lên
-    if (uploadFontBtn && fontFileInput) {
-        uploadFontBtn.addEventListener('click', () => {
-            fontFileInput.click();
-        });
-
-        fontFileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // Kiểm tra định dạng
-            const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
-            const fileName = file.name.toLowerCase();
-            const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+        // Hàm thêm font vào document và select
+        function addCustomFont(fontName, fontUrl, serverFileName) {
             
-            if (!hasValidExt) {
-                showToast('Chỉ chấp nhận file .ttf, .otf, .woff, .woff2', 'error');
-                fontFileInput.value = '';
-                return;
-            }
-
-            try {
-                showToast('Đang tải lên font...', 'info');
-                
-                // Upload lên server
-                const formData = new FormData();
-                formData.append('font', file);
-
-                const uploadRes = await fetch('/upload-font', {
-                    method: 'POST',
-                    headers: { 
-                        'X-CSRF-TOKEN': csrf,
-                        'Accept': 'application/json' // Quan trọng!
-                    },
-                    body: formData
-                });
-
-                // Kiểm tra response type
-                const contentType = uploadRes.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await uploadRes.text();
-                    console.error('Server response:', text);
-                    throw new Error('Server không trả về JSON. Kiểm tra route /upload-font');
+            // Thêm @font-face động
+            const style = document.createElement('style');
+            style.textContent = `
+                @font-face {
+                    font-family: '${fontName}';
+                    src: url('${fontUrl}') format('truetype');
+                    font-weight: normal;
+                    font-style: normal;
                 }
-
-                const data = await uploadRes.json();
-                
-                if (!uploadRes.ok) {
-                    throw new Error(data.message || 'Upload thất bại');
-                }
-
-                if (!data.success) {
-                    throw new Error(data.message || 'Upload không thành công');
-                }
-
-                const fontName = data.name.replace(/\.[^/.]+$/, "");
-                const fontUrl = data.url;
-                const serverFileName = data.serverFileName;
-
-                // Lưu vào localStorage
-                customFonts.push({
-                    name: fontName,
-                    url: fontUrl,
-                    serverFileName: serverFileName
-                });
-                localStorage.setItem('customFonts', JSON.stringify(customFonts));
-
-                // Thêm font vào UI
-                addCustomFont(fontName, fontUrl, serverFileName);
-
-                // Tự động chọn font mới
-                fontFamilySelect.value = `'${fontName}', sans-serif`;
-                updateName();
-                saveDesign();
-
-                showToast('Đã tải lên phông chữ thành công!', 'success');
-
-            } catch (err) {
-                console.error('Upload font error:', err);
-                showToast(err.message || 'Tải lên phông chữ thất bại', 'error');
-            } finally {
-                fontFileInput.value = '';
-            }
-        });
-    }
-
-    // Toast notification
-    const toast = document.getElementById('toast');
-    const toastMessage = toast?.querySelector('.toast-message');
-    const toastClose = toast?.querySelector('.toast-close');
-    const toastProgress = toast?.querySelector('.toast-progress');
-
-    let toastTimer = null;
-
-    window.showToast = function (message, type = 'success', duration = 3000) {
-        if (!toast) return;
-
-        if (toastTimer) clearTimeout(toastTimer);
-
-        toast.className = 'toast';
-        toast.classList.add(type, 'show');
-
-        if (toastMessage) toastMessage.textContent = message;
-
-        if (toastProgress) {
-            toastProgress.style.transition = 'none';
-            toastProgress.style.width = '100%';
-
-            setTimeout(() => {
-                toastProgress.style.transition = `width ${duration}ms linear`;
-                toastProgress.style.width = '0%';
-            }, 10);
-        }
-
-        toastTimer = setTimeout(() => {
-            toast.classList.remove('show');
-        }, duration);
-    };
-
-    if (toastClose) toastClose.addEventListener('click', () => toast.classList.remove('show'));
-
-    // Confirm modal
-    const confirmModal = document.getElementById('confirmModal');
-    const confirmCancel = document.getElementById('confirmCancel');
-    const confirmDelete = document.getElementById('confirmDelete');
-
-    let deleteCallback = null;
-
-    window.showConfirm = function (message, onConfirm) {
-        if (!confirmModal) return;
-
-        const msgEl = confirmModal.querySelector('p');
-        if (msgEl) msgEl.textContent = message;
-
-        confirmModal.classList.remove('hidden');
-        deleteCallback = onConfirm;
-    };
-
-    function hideConfirm() {
-        confirmModal?.classList.add('hidden');
-        deleteCallback = null;
-    }
-
-    if (confirmCancel) confirmCancel.addEventListener('click', hideConfirm);
-    if (confirmDelete) confirmDelete.addEventListener('click', () => {
-        if (typeof deleteCallback === 'function') deleteCallback();
-        hideConfirm();
-    });
-
-    if (confirmModal) confirmModal.addEventListener('click', (e) => {
-        if (e.target === confirmModal) hideConfirm();
-    });
-
-    // Khởi tạo
-    loadPatchState();
-    loadSavedDesign();
-
-    setTimeout(() => {
-        if (svg && baseImage && baseImage.src) {
-            updateSVGViewBox();
-            setTimeout(() => updateName(), 100);
-        }
-    }, 100);
-
-    // Expose functions cho export.js
-    window.updateName = updateName;
-    window.updateSVGViewBox = updateSVGViewBox;
-    window.loadSavedDesign = loadSavedDesign;
-    window.resetToUploadGrid = function() {
-        if (uploadArea) uploadArea.style.display = 'flex';
-        if (imageContainer) imageContainer.style.display = 'none';
-        if (changeImageBtn) changeImageBtn.classList.remove('active');
-        baseImage.src = '';
-        if (bg) bg.style.display = 'none';
-        if (text) text.style.display = 'none';
-        currentName = '';
-        if (nameInput) nameInput.value = '';
-        const url = new URL(window.location);
-        url.searchParams.delete('name');
-        window.history.replaceState({}, '', url);
-        localStorage.removeItem('currentDesign');
-    };
-    
-    // Lấy config để export
-    // Lấy config để export
-window.getExportConfig = function() {
-    const fontFamilySelect = document.getElementById('fontFamily');
-    const fontSizeInput = document.getElementById('fontSizeInput');
-    const fontSize = document.getElementById('fontSize');
-    const textColor = document.getElementById('textColor');
-    const bgColor = document.getElementById('bgColor');
-    const strokeColor = document.getElementById('strokeColor');
-    
-    const currentFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
-    
-    const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
-    const customFontFile = selectedOption?.dataset?.serverFile || null;
-    
-    let fontFamilyValue = fontFamilySelect?.value || 'Arial, sans-serif';
-    if (customFontFile) {
-        fontFamilyValue = fontFamilyValue.replace(/, sans-serif|, serif|, monospace/g, '').replace(/['"]/g, '');
-    }
-    
-    // lấy corner radius hiện tại từ bg
-    const currentCornerRadius = parseFloat(bg?.getAttribute('rx') || 25);
-    
-    // tính corner radius gốc dựa trên kích thước ảnh
-    const imgWidth = baseImage?.naturalWidth || baseImage?.width || 11417;
-    const scaleFactor = imgWidth / 11417;
-    const baseCornerRadius = currentCornerRadius / scaleFactor;
-    
-    // ✅ TÍNH LƯỢNG PATCH SIZE HIỆN TẠI (ĐẢM BẢO LUÔN GỬI)
-    let finalPatchWidth = 0;
-    let finalPatchHeight = 0;
-    
-    if (hasSetupBg && bg && bg.style.display !== 'none') {
-        // Patch đang hiển thị - lấy size thực tế
-        finalPatchWidth = parseFloat(bg.getAttribute('width') || 0);
-        finalPatchHeight = parseFloat(bg.getAttribute('height') || 0);
-    } else if (currentName && currentName.trim() !== '') {
-        // Không có patch nhưng có text - tính size theo text
-        const lines = currentName.split('\n');
-        const patchSize = calculateMultiLinePatchSize(
-            lines,
-            currentFontSize,
-            fontFamily?.value || 'Arial, sans-serif',
-            isBold,
-            isItalic,
-            scaleFactor
-        );
-        
-        finalPatchWidth = patchSize.width;
-        finalPatchHeight = patchSize.height;
-    }
-    
-    console.log('📦 Export Config - Patch Size:', {
-        hasSetupBg: hasSetupBg,
-        bgDisplay: bg?.style.display,
-        finalPatchWidth: finalPatchWidth,
-        finalPatchHeight: finalPatchHeight,
-        cornerRadius: baseCornerRadius
-    });
-    
-    const config = {
-        text: currentName,
-        x: window.currentTextX,
-        y: window.currentTextY,
-        
-        // ✅ LUÔN GỬI PATCH SIZE (QUAN TRỌNG!)
-        patchWidth: finalPatchWidth,
-        patchHeight: finalPatchHeight,
-        
-        patchRotation: patchRotation || 0,
-        isManualResizedPatch: isManualResizedPatch || false,
-        
-        // lưu corner radius gốc
-        patchCornerRadius: baseCornerRadius || 25,
-        
-        hasPatch: hasSetupBg === true,
-        
-        fontFamily: fontFamilyValue,
-        fontSize: currentFontSize,
-        fontWeight: isBold ? 'bold' : 'normal',
-        fontStyle: isItalic ? 'italic' : 'normal',
-        textDecoration: isUnderline ? 'underline' : 'none',
-        
-        textColor: textColor?.value || '#dec27a',
-        bgColor: hasSetupBg ? (bgColor?.value || '#565559') : null,
-        strokeColor: hasSetupStroke ? (strokeColor?.value || '#dec27a') : null,
-        paddingX: window.currentPaddingX || currentPaddingX || 60,
-        paddingY: window.currentPaddingY || currentPaddingY || 30,
-        customFontFile: customFontFile
-    };
-    
-    console.log('✅ Final Export Config:', config);
-    
-    return config;
-};
-
-    window.updateBoldState = (value) => isBold = value;
-    window.updateItalicState = (value) => isItalic = value;
-    window.updateUnderlineState = (value) => isUnderline = value;
-
-    window.startInlineTextEdit = startInlineEdit;
-    window.finishInlineTextEdit = finishInlineEdit;
-
-    // BIẾN CHO RESIZE & ROTATION
-    let isResizingImage = false;
-    let imageResizeHandle = null;
-    let imageStartWidth = 0;
-    let imageStartHeight = 0;
-    let imageStartX = 0;
-    let imageStartY = 0;
-    let imageAspectRatio = 1;
-
-    // group (text + patch)
-    let isResizingGroup = false;
-    let groupResizeHandle = null;
-    let groupStartWidth = 0;
-    let groupStartHeight = 0;
-    let groupStartX = 0;
-    let groupStartY = 0;
-    let originalGroupFontSize = 0;
-
-    let isRotatingGroup = false;
-    let rotationStartAngle = 0;
-
-    // Trạng thái border
-    let imageBorderActive = false;
-
-    // sửa pointer-events sau khi cập nhật viewBox
-    const originalUpdateSVGViewBox = window.updateSVGViewBox;
-    window.updateSVGViewBox = function() {
-        if (originalUpdateSVGViewBox) originalUpdateSVGViewBox();
-        
-        if (svg) svg.style.pointerEvents = 'none';
-        if (bg) bg.style.pointerEvents = 'all';
-        if (text) text.style.pointerEvents = 'all';
-    };
-
-    if (window.updateSVGViewBox) window.updateSVGViewBox();
-
-    // resize image
-    function createImageResizeBorder() {
-        if (document.getElementById('imageBorderOverlay')) return;
-        
-        const borderOverlay = document.createElement('div');
-        borderOverlay.id = 'imageBorderOverlay';
-        borderOverlay.style.cssText = `
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            pointer-events: none;
-            display: none;
-            z-index: 9999;
-            box-sizing: border-box;
-        `;
-        
-        const borderStyles = [
-            { side: 'top', styles: 'top: 0; left: 0; width: 100%; height: 3px;' },
-            { side: 'right', styles: 'top: 0; right: 0; width: 3px; height: 100%;' },
-            { side: 'bottom', styles: 'bottom: 0; left: 0; width: 100%; height: 3px;' },
-            { side: 'left', styles: 'top: 0; left: 0; width: 3px; height: 100%;' }
-        ];
-        
-        borderStyles.forEach(({ side, styles }) => {
-            const border = document.createElement('div');
-            border.className = `border-${side}`;
-            border.style.cssText = `
-                position: absolute;
-                background: #0067b8;
-                pointer-events: none;
-                ${styles}
             `;
-            borderOverlay.appendChild(border);
-        });
-        
-        const handles = [
-            { pos: 'nw', cursor: 'nwse-resize', top: '-15px', left: '-15px' },
-            { pos: 'ne', cursor: 'nesw-resize', top: '-15px', right: '-15px' },
-            { pos: 'sw', cursor: 'nesw-resize', bottom: '-15px', left: '-15px' },
-            { pos: 'se', cursor: 'nwse-resize', bottom: '-15px', right: '-15px' }
-        ];
-        
-        handles.forEach(({ pos, cursor, ...styles }) => {
-            const handle = document.createElement('div');
-            handle.className = `image-resize-handle image-resize-${pos}`;
-            handle.dataset.position = pos;
-            handle.style.cssText = `
-                position: absolute;
-                width: 24px;
-                height: 24px;
-                background: white;
-                border: 3px solid #0067b8;
-                border-radius: 4px;
-                cursor: ${cursor};
-                pointer-events: all;
-                z-index: 10000;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                transition: all 0.2s ease;
-            `;
-            Object.entries(styles).forEach(([k, v]) => handle.style[k] = v);
-            
-            handle.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                startImageResize(e, pos);
+            document.head.appendChild(style);
+
+            // Thêm vào select (nếu chưa có)
+            if (!fontFamilySelect.querySelector(`option[value="'${fontName}', sans-serif"]`)) {
+                const option = document.createElement('option');
+                option.value = `'${fontName}', sans-serif`;
+                option.textContent = fontName;
+                option.dataset.serverFile = serverFileName;
+                fontFamilySelect.appendChild(option);
+            }
+        }
+
+        // Load tất cả font custom từ localStorage khi trang load
+        if (customFonts.length > 0) {
+            customFonts.forEach(font => {
+                addCustomFont(font.name, font.url, font.serverFileName);
             });
-            
-            borderOverlay.appendChild(handle);
-        });
-        
-        if (imageContainer) {
-            imageContainer.appendChild(borderOverlay);
         }
-    }
 
-    // 1. HÀM TÍNH TEXT WIDTH
-    function measureTextWidth(text, fontSize, fontFamily, isBold, isItalic) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const fontWeight = isBold ? 'bold' : 'normal';
-        const fontStyle = isItalic ? 'italic' : 'normal';
-        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-        return ctx.measureText(text.toUpperCase()).width;
-    }
-
-    // 2. HÀM AUTO WRAP TEXT THEO WIDTH
-    function autoWrapText(text, maxWidth, fontSize, fontFamily, isBold, isItalic) {
-        const words = text.split(/\s+/);
-        const lines = [];
-        let currentLine = '';
-        
-        words.forEach(word => {
-            const testLine = currentLine ? currentLine + ' ' + word : word;
-            const testWidth = measureTextWidth(testLine, fontSize, fontFamily, isBold, isItalic);
-            
-            if (testWidth > maxWidth && currentLine !== '') {
-                lines.push(currentLine);
-                currentLine = word;
-            } else {
-                currentLine = testLine;
-            }
-        });
-        
-        if (currentLine !== '') {
-            lines.push(currentLine);
-        }
-        
-        return lines.join('\n');
-    }
-
-    // 3. HÀM UNWRAP TEXT (GỘP VỀ 1 DÒNG)
-    function unwrapText(text) {
-        return text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    }
-
-
-    // Bắt đầu resize image
-    function startImageResize(e, position) {
-        isResizingImage = true;
-        imageResizeHandle = position;
-        isDragging = false;
-        
-        const rect = imageContainer.getBoundingClientRect();
-        imageStartWidth = rect.width;
-        imageStartHeight = rect.height;
-        imageStartX = e.clientX;
-        imageStartY = e.clientY;
-        imageAspectRatio = imageStartWidth / imageStartHeight;
-        
-        document.body.style.cursor = e.target.style.cursor;
-    }
-
-    // Kích hoạt border khi click vào imageContainer
-    if (imageContainer) {
-        imageContainer.addEventListener('click', (e) => {
-            if (e.target === baseImage || e.target === imageContainer) {
-                imageBorderActive = true;
-                
-                const imageBorder = document.getElementById('imageBorderOverlay');
-                if (imageBorder) imageBorder.style.display = 'block';
-                
-                const groupBorder = document.getElementById('groupBorderOverlay');
-                if (groupBorder) groupBorder.style.display = 'none';
-                
-                e.stopPropagation();
-            }
-        });
-    }
-
-    // group resize và rotation
-    function createGroupResizeControls() {
-        if (document.getElementById('groupBorderOverlay')) return;
-        
-        const borderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        borderGroup.id = 'groupBorderOverlay';
-        borderGroup.style.display = 'none';
-        borderGroup.style.pointerEvents = 'none';
-        
-        // Border chính
-        const borderRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        borderRect.id = 'groupBorderRect';
-        borderRect.setAttribute('fill', 'none');
-        borderRect.setAttribute('stroke', '#0067b8');
-        borderRect.setAttribute('stroke-width', '3');
-        borderRect.setAttribute('stroke-dasharray', '12,6');
-        borderRect.style.pointerEvents = 'none';
-        borderGroup.appendChild(borderRect);
-        
-        // 8 resize handles
-        const handles = [
-            { pos: 'nw', cursor: 'nwse-resize' },
-            { pos: 'n', cursor: 'ns-resize' },
-            { pos: 'ne', cursor: 'nesw-resize' },
-            { pos: 'e', cursor: 'ew-resize' },
-            { pos: 'se', cursor: 'nwse-resize' },
-            { pos: 's', cursor: 'ns-resize' },
-            { pos: 'sw', cursor: 'nesw-resize' },
-            { pos: 'w', cursor: 'ew-resize' }
-        ];
-        
-        handles.forEach(({ pos, cursor }) => {
-            const handle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            handle.classList.add('group-resize-handle');
-            handle.dataset.position = pos;
-            handle.setAttribute('width', '20');
-            handle.setAttribute('height', '20');
-            handle.setAttribute('fill', 'white');
-            handle.setAttribute('stroke', '#0067b8');
-            handle.setAttribute('stroke-width', '3');
-            handle.setAttribute('rx', '3');
-            handle.style.cursor = cursor;
-            handle.style.pointerEvents = 'all';
-            
-            handle.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                startGroupResize(e, pos);
+        // Xử lý nút tải lên
+        if (uploadFontBtn && fontFileInput) {
+            uploadFontBtn.addEventListener('click', () => {
+                fontFileInput.click();
             });
-            
-            borderGroup.appendChild(handle);
-        });
-        
-        // rotation handle
-        const rotationHandle = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        rotationHandle.id = 'groupRotationHandle';
-        rotationHandle.style.pointerEvents = 'all';
-        rotationHandle.style.cursor = 'grab';
-        
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('stroke', '#0067b8');
-        line.setAttribute('stroke-width', '2');
-        rotationHandle.appendChild(line);
-        
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('r', '14');
-        circle.setAttribute('fill', 'white');
-        circle.setAttribute('stroke', '#0067b8');
-        circle.setAttribute('stroke-width', '3');
-        rotationHandle.appendChild(circle);
-        
-        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        icon.setAttribute('d', 'M 0,-7 A 7,7 0 1,1 0,7');
-        icon.setAttribute('fill', 'none');
-        icon.setAttribute('stroke', '#0067b8');
-        icon.setAttribute('stroke-width', '2.5');
-        icon.setAttribute('stroke-linecap', 'round');
-        rotationHandle.appendChild(icon);
-        
-        rotationHandle.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            startGroupRotation(e);
-        });
-        
-        borderGroup.appendChild(rotationHandle);
-        
-        if (svg) svg.appendChild(borderGroup);
 
-        handle.addEventListener('mouseenter', () => {
-            const isHorizontal = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(pos);
-            if (isHorizontal) {
-                handle.setAttribute('data-tooltip', 'Kéo để tự động xuống dòng');
-            }
-        });
-    }
+            fontFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-    function startGroupResize(e, position) {
-    isResizingGroup = true;
-    groupResizeHandle = position;
-    isDragging = false;
-    
-    const svgRect = svg.getBoundingClientRect();
-    const imgWidth = baseImage.naturalWidth || baseImage.width;
-    const imgHeight = baseImage.naturalHeight || baseImage.height;
-    
-    const scaleX = imgWidth / svgRect.width;
-    const scaleY = imgHeight / svgRect.height;
-    
-    groupStartX = (e.clientX - svgRect.left) * scaleX;
-    groupStartY = (e.clientY - svgRect.top) * scaleY;
-    
-    groupStartWidth = window.currentPatchWidth || 400;
-    groupStartHeight = window.currentPatchHeight || 100;
-    
-    originalGroupFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
-    
-    // ✅ LƯU TEXT GỐC (UNWRAP)
-    window.originalUnwrappedText = unwrapText(currentName);
-    
-    document.body.style.cursor = e.target.style.cursor;
-}
+                // Kiểm tra định dạng
+                const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+                const fileName = file.name.toLowerCase();
+                const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+                
+                if (!hasValidExt) {
+                    showToast('Chỉ chấp nhận file .ttf, .otf, .woff, .woff2', 'error');
+                    fontFileInput.value = '';
+                    return;
+                }
 
+                try {
+                    showToast('Đang tải lên font...', 'info');
+                    
+                    // Upload lên server
+                    const formData = new FormData();
+                    formData.append('font', file);
 
-    // Bắt đầu xoay group
-    function startGroupRotation(e) {
-        isRotatingGroup = true;
-        isDragging = false;
-        
-        const svgRect = svg.getBoundingClientRect();
-        const imgWidth = baseImage.naturalWidth || baseImage.width;
-        const imgHeight = baseImage.naturalHeight || baseImage.height;
-        
-        const scaleX = imgWidth / svgRect.width;
-        const scaleY = imgHeight / svgRect.height;
-        
-        const mouseX = (e.clientX - svgRect.left) * scaleX;
-        const mouseY = (e.clientY - svgRect.top) * scaleY;
-        
-        const dx = mouseX - window.currentTextX;
-        const dy = mouseY - window.currentTextY;
-        rotationStartAngle = Math.atan2(dy, dx) * 180 / Math.PI - patchRotation;
-        
-        document.body.style.cursor = 'grabbing';
-    }
+                    const uploadRes = await fetch('/upload-font', {
+                        method: 'POST',
+                        headers: { 
+                            'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json'    
+                        },
+                        body: formData
+                    });
 
-    // Cập nhật border group
-    function updateGroupBorder() {
-        const borderGroup = document.getElementById('groupBorderOverlay');
-        const borderRect = document.getElementById('groupBorderRect');
-        if (!borderGroup || !borderRect) return;
-        
-        // Nếu chưa có patch, dùng text bbox
-        let x, y, w, h;
-        
-        if (bg && bg.style.display !== 'none') {
-            x = parseFloat(bg.getAttribute('x') || 0);
-            y = parseFloat(bg.getAttribute('y') || 0);
-            w = parseFloat(bg.getAttribute('width') || 0);
-            h = parseFloat(bg.getAttribute('height') || 0);
-        } else if (text) {
-            try {
-                const bbox = text.getBBox();
-                x = bbox.x;
-                y = bbox.y;
-                w = bbox.width;
-                h = bbox.height;
-            } catch (e) {
-                return;
-            }
-        } else {
-            return;
+                    // Kiểm tra response type
+                    const contentType = uploadRes.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await uploadRes.text();
+                        console.error('Server response:', text);
+                        throw new Error('Server không trả về JSON. Kiểm tra route /upload-font');
+                    }
+
+                    const data = await uploadRes.json();
+                    
+                    if (!uploadRes.ok) {
+                        throw new Error(data.message || 'Upload thất bại');
+                    }
+
+                    if (!data.success) {
+                        throw new Error(data.message || 'Upload không thành công');
+                    }
+
+                    const fontName = data.name.replace(/\.[^/.]+$/, "");
+                    const fontUrl = data.url;
+                    const serverFileName = data.serverFileName;
+
+                    // Lưu vào localStorage
+                    customFonts.push({
+                        name: fontName,
+                        url: fontUrl,
+                        serverFileName: serverFileName
+                    });
+                    localStorage.setItem('customFonts', JSON.stringify(customFonts));
+
+                    // Thêm font vào UI
+                    addCustomFont(fontName, fontUrl, serverFileName);
+
+                    // Tự động chọn font mới
+                    fontFamilySelect.value = `'${fontName}', sans-serif`;
+                    updateName();
+                    saveDesign();
+
+                    showToast('Đã tải lên phông chữ thành công!', 'success');
+
+                } catch (err) {
+                    console.error('Upload font error:', err);
+                    showToast(err.message || 'Tải lên phông chữ thất bại', 'error');
+                } finally {
+                    fontFileInput.value = '';
+                }
+            });
         }
-        
-        if (w === 0 || h === 0) return;
-        
-        const padding = 15;
-        borderRect.setAttribute('x', x - padding);
-        borderRect.setAttribute('y', y - padding);
-        borderRect.setAttribute('width', w + padding * 2);
-        borderRect.setAttribute('height', h + padding * 2);
-        
-        const transform = `rotate(${patchRotation}, ${window.currentTextX}, ${window.currentTextY})`;
-        borderRect.setAttribute('transform', transform);
-        
-        // cập nhật vị trí handles
-        const positions = {
-            'nw': { x: x - padding - 10, y: y - padding - 10 },
-            'n':  { x: x + w/2 - 10, y: y - padding - 10 },
-            'ne': { x: x + w + padding - 10, y: y - padding - 10 },
-            'e':  { x: x + w + padding - 10, y: y + h/2 - 10 },
-            'se': { x: x + w + padding - 10, y: y + h + padding - 10 },
-            's':  { x: x + w/2 - 10, y: y + h + padding - 10 },
-            'sw': { x: x - padding - 10, y: y + h + padding - 10 },
-            'w':  { x: x - padding - 10, y: y + h/2 - 10 }
+
+        // Toast notification
+        const toast = document.getElementById('toast');
+        const toastMessage = toast?.querySelector('.toast-message');
+        const toastClose = toast?.querySelector('.toast-close');
+        const toastProgress = toast?.querySelector('.toast-progress');
+
+        let toastTimer = null;
+
+        window.showToast = function (message, type = 'success', duration = 3000) {
+            if (!toast) return;
+
+            if (toastTimer) clearTimeout(toastTimer);
+
+            toast.className = 'toast';
+            toast.classList.add(type, 'show');
+
+            if (toastMessage) toastMessage.textContent = message;
+
+            if (toastProgress) {
+                toastProgress.style.transition = 'none';
+                toastProgress.style.width = '100%';
+
+                setTimeout(() => {
+                    toastProgress.style.transition = `width ${duration}ms linear`;
+                    toastProgress.style.width = '0%';
+                }, 10);
+            }
+
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        };
+
+        if (toastClose) toastClose.addEventListener('click', () => toast.classList.remove('show'));
+
+        // Confirm modal
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmCancel = document.getElementById('confirmCancel');
+        const confirmDelete = document.getElementById('confirmDelete');
+
+        let deleteCallback = null;
+
+        window.showConfirm = function (message, onConfirm) {
+            if (!confirmModal) return;
+
+            const msgEl = confirmModal.querySelector('p');
+            if (msgEl) msgEl.textContent = message;
+
+            confirmModal.classList.remove('hidden');
+            deleteCallback = onConfirm;
+        };
+
+        function hideConfirm() {
+            confirmModal?.classList.add('hidden');
+            deleteCallback = null;
+        }
+
+        if (confirmCancel) confirmCancel.addEventListener('click', hideConfirm);
+        if (confirmDelete) confirmDelete.addEventListener('click', () => {
+            if (typeof deleteCallback === 'function') deleteCallback();
+            hideConfirm();
+        });
+
+        if (confirmModal) confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) hideConfirm();
+        });
+
+        // Khởi tạo
+        loadPatchState();
+        loadSavedDesign();
+
+        setTimeout(() => {
+            if (svg && baseImage && baseImage.src) {
+                updateSVGViewBox();
+                setTimeout(() => updateName(), 100);
+            }
+        }, 100);
+
+        // Expose functions cho export.js
+        window.updateName = updateName;
+        window.updateSVGViewBox = updateSVGViewBox;
+        window.loadSavedDesign = loadSavedDesign;
+        window.resetToUploadGrid = function() {
+            if (uploadArea) uploadArea.style.display = 'flex';
+            if (imageContainer) imageContainer.style.display = 'none';
+            if (changeImageBtn) changeImageBtn.classList.remove('active');
+            baseImage.src = '';
+            if (bg) bg.style.display = 'none';
+            if (text) text.style.display = 'none';
+            currentName = '';
+            if (nameInput) nameInput.value = '';
+            const url = new URL(window.location);
+            url.searchParams.delete('name');
+            window.history.replaceState({}, '', url);
+            localStorage.removeItem('currentDesign');
         };
         
-        borderGroup.querySelectorAll('.group-resize-handle').forEach(handle => {
-            const pos = handle.dataset.position;
-            if (positions[pos]) {
-                handle.setAttribute('x', positions[pos].x);
-                handle.setAttribute('y', positions[pos].y);
-                handle.setAttribute('transform', transform);
+        // Lấy config để export
+        window.getExportConfig = function() {
+            const fontFamilySelect = document.getElementById('fontFamily');
+            const fontSizeInput = document.getElementById('fontSizeInput');
+            const fontSize = document.getElementById('fontSize');
+            const textColor = document.getElementById('textColor');
+            const bgColor = document.getElementById('bgColor');
+            const strokeColor = document.getElementById('strokeColor');
+            
+            const currentFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
+            
+            const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
+            const customFontFile = selectedOption?.dataset?.serverFile || null;
+            
+            let fontFamilyValue = fontFamilySelect?.value || 'Arial, sans-serif';
+            if (customFontFile) {
+                fontFamilyValue = fontFamilyValue.replace(/, sans-serif|, serif|, monospace/g, '').replace(/['"]/g, '');
             }
-        });
-        
-        // Rotation handle
-        const rotationHandle = document.getElementById('groupRotationHandle');
-        if (rotationHandle) {
-            const rotHandleX = x + w/2;
-            const rotHandleY = y - padding - 50;
             
-            rotationHandle.setAttribute('transform', `translate(${rotHandleX}, ${rotHandleY}) rotate(${patchRotation})`);
+            // lấy corner radius hiện tại từ bg
+            const currentCornerRadius = parseFloat(bg?.getAttribute('rx') || 25);
             
-            const line = rotationHandle.querySelector('line');
-            line.setAttribute('x1', 0);
-            line.setAttribute('y1', 0);
-            line.setAttribute('x2', 0);
-            line.setAttribute('y2', 45);
-        }
-    }
+            // tính corner radius gốc dựa trên kích thước ảnh
+            const imgWidth = baseImage?.naturalWidth || baseImage?.width || 11417;
+            const scaleFactor = imgWidth / 11417;
+            const baseCornerRadius = currentCornerRadius / scaleFactor;
+            
+            //  tính kích thước patch cuối cùng
+            let finalPatchWidth = 0;
+            let finalPatchHeight = 0;
+            
+            if (hasSetupBg && bg && bg.style.display !== 'none') {
+                // Patch đang hiển thị - lấy size thực tế
+                finalPatchWidth = parseFloat(bg.getAttribute('width') || 0);
+                finalPatchHeight = parseFloat(bg.getAttribute('height') || 0);
+            } else if (currentName && currentName.trim() !== '') {
+                // Không có patch nhưng có text - tính size theo text
+                const lines = currentName.split('\n');
+                const patchSize = calculateMultiLinePatchSize(
+                    lines,
+                    currentFontSize,
+                    fontFamily?.value || 'Arial, sans-serif',
+                    isBold,
+                    isItalic,
+                    scaleFactor
+                );
+                
+                finalPatchWidth = patchSize.width;
+                finalPatchHeight = patchSize.height;
+            }
+            
+            console.log('Export Config - Patch Size:', {
+                hasSetupBg: hasSetupBg,
+                bgDisplay: bg?.style.display,
+                finalPatchWidth: finalPatchWidth,
+                finalPatchHeight: finalPatchHeight,
+                cornerRadius: baseCornerRadius
+            });
+            
+            const config = {
+                text: currentName,
+                x: window.currentTextX,
+                y: window.currentTextY,
+                
+                // lấy kích thước patch cuối cùng
+                patchWidth: finalPatchWidth,
+                patchHeight: finalPatchHeight,
+                
+                patchRotation: patchRotation || 0,
+                isManualResizedPatch: isManualResizedPatch || false,
+                
+                // lưu corner radius gốc
+                patchCornerRadius: baseCornerRadius || 25,
+                
+                hasPatch: hasSetupBg === true,
+                
+                fontFamily: fontFamilyValue,
+                fontSize: currentFontSize,
+                fontWeight: isBold ? 'bold' : 'normal',
+                fontStyle: isItalic ? 'italic' : 'normal',
+                textDecoration: isUnderline ? 'underline' : 'none',
+                
+                textColor: textColor?.value || '#dec27a',
+                bgColor: hasSetupBg ? (bgColor?.value || '#565559') : null,
+                strokeColor: hasSetupStroke ? (strokeColor?.value || '#dec27a') : null,
+                paddingX: window.currentPaddingX || currentPaddingX || 60,
+                paddingY: window.currentPaddingY || currentPaddingY || 30,
+                customFontFile: customFontFile
+            };
+            
+            console.log('Final Export Config:', config);
+            
+            return config;
+        };
 
-    // Áp dụng xoay patch
-    function applyPatchRotation() {
-        if (!text) return;
-        
-        const transform = `rotate(${patchRotation}, ${window.currentTextX}, ${window.currentTextY})`;
-        
-        if (bg && bg.style.display !== 'none') {
-            bg.setAttribute('transform', transform);
-        }
-        text.setAttribute('transform', transform);
-        
-        updateGroupBorder();
-    }
+        window.updateBoldState = (value) => isBold = value;
+        window.updateItalicState = (value) => isItalic = value;
+        window.updateUnderlineState = (value) => isUnderline = value;
 
-    // Click events
-    if (bg) {
-        bg.addEventListener('click', (e) => {
+        window.startInlineTextEdit = startInlineEdit;
+        window.finishInlineTextEdit = finishInlineEdit;
+
+        // BIẾN CHO RESIZE & ROTATION
+        let isResizingImage = false;
+        let imageResizeHandle = null;
+        let imageStartWidth = 0;
+        let imageStartHeight = 0;
+        let imageStartX = 0;
+        let imageStartY = 0;
+        let imageAspectRatio = 1;
+
+        // group (text + patch)
+        let isResizingGroup = false;
+        let groupResizeHandle = null;
+        let groupStartWidth = 0;
+        let groupStartHeight = 0;
+        let groupStartX = 0;
+        let groupStartY = 0;
+        let originalGroupFontSize = 0;
+
+        let isRotatingGroup = false;
+        let rotationStartAngle = 0;
+
+        // Trạng thái border
+        let imageBorderActive = false;
+
+        // sửa pointer-events sau khi cập nhật viewBox
+        const originalUpdateSVGViewBox = window.updateSVGViewBox;
+        window.updateSVGViewBox = function() {
+            if (originalUpdateSVGViewBox) originalUpdateSVGViewBox();
+            
+            if (svg) svg.style.pointerEvents = 'none';
+            if (bg) bg.style.pointerEvents = 'all';
+            if (text) text.style.pointerEvents = 'all';
+        };
+
+        if (window.updateSVGViewBox) window.updateSVGViewBox();
+
+        // resize image
+        function createImageResizeBorder() {
+            if (document.getElementById('imageBorderOverlay')) return;
+            
+            const borderOverlay = document.createElement('div');
+            borderOverlay.id = 'imageBorderOverlay';
+            borderOverlay.style.cssText = `
+                position: absolute;
+                top: -3px;
+                left: -3px;
+                right: -3px;
+                bottom: -3px;
+                pointer-events: none;
+                display: none;
+                z-index: 9999;
+                box-sizing: border-box;
+            `;
+            
+            const borderStyles = [
+                { side: 'top', styles: 'top: 0; left: 0; width: 100%; height: 3px;' },
+                { side: 'right', styles: 'top: 0; right: 0; width: 3px; height: 100%;' },
+                { side: 'bottom', styles: 'bottom: 0; left: 0; width: 100%; height: 3px;' },
+                { side: 'left', styles: 'top: 0; left: 0; width: 3px; height: 100%;' }
+            ];
+            
+            borderStyles.forEach(({ side, styles }) => {
+                const border = document.createElement('div');
+                border.className = `border-${side}`;
+                border.style.cssText = `
+                    position: absolute;
+                    background: #0067b8;
+                    pointer-events: none;
+                    ${styles}
+                `;
+                borderOverlay.appendChild(border);
+            });
+            
+            const handles = [
+                { pos: 'nw', cursor: 'nwse-resize', top: '-15px', left: '-15px' },
+                { pos: 'ne', cursor: 'nesw-resize', top: '-15px', right: '-15px' },
+                { pos: 'sw', cursor: 'nesw-resize', bottom: '-15px', left: '-15px' },
+                { pos: 'se', cursor: 'nwse-resize', bottom: '-15px', right: '-15px' }
+            ];
+            
+            handles.forEach(({ pos, cursor, ...styles }) => {
+                const handle = document.createElement('div');
+                handle.className = `image-resize-handle image-resize-${pos}`;
+                handle.dataset.position = pos;
+                handle.style.cssText = `
+                    position: absolute;
+                    width: 24px;
+                    height: 24px;
+                    background: white;
+                    border: 3px solid #0067b8;
+                    border-radius: 4px;
+                    cursor: ${cursor};
+                    pointer-events: all;
+                    z-index: 10000;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    transition: all 0.2s ease;
+                `;
+                Object.entries(styles).forEach(([k, v]) => handle.style[k] = v);
+                
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startImageResize(e, pos);
+                });
+                
+                borderOverlay.appendChild(handle);
+            });
+            
+            if (imageContainer) {
+                imageContainer.appendChild(borderOverlay);
+            }
+        }
+
+        // hàm đo chiều rộng text
+        function measureTextWidth(text, fontSize, fontFamily, isBold, isItalic) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const fontWeight = isBold ? 'bold' : 'normal';
+            const fontStyle = isItalic ? 'italic' : 'normal';
+            ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+            return ctx.measureText(text.toUpperCase()).width;
+        }
+
+        // hàm tự động xuống dòng
+        function autoWrapText(text, maxWidth, fontSize, fontFamily, isBold, isItalic) {
+            const words = text.split(/\s+/);
+            const lines = [];
+            let currentLine = '';
+            
+            words.forEach(word => {
+                const testLine = currentLine ? currentLine + ' ' + word : word;
+                const testWidth = measureTextWidth(testLine, fontSize, fontFamily, isBold, isItalic);
+                
+                if (testWidth > maxWidth && currentLine !== '') {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            });
+            
+            if (currentLine !== '') {
+                lines.push(currentLine);
+            }
+            
+            return lines.join('\n');
+        }
+
+        // hàm gỡ bỏ khoảng trắng thừa và xuống dòng
+        function unwrapText(text) {
+            return text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+
+        // Bắt đầu resize image
+        function startImageResize(e, position) {
+            isResizingImage = true;
+            imageResizeHandle = position;
+            isDragging = false;
+            
+            const rect = imageContainer.getBoundingClientRect();
+            imageStartWidth = rect.width;
+            imageStartHeight = rect.height;
+            imageStartX = e.clientX;
+            imageStartY = e.clientY;
+            imageAspectRatio = imageStartWidth / imageStartHeight;
+            
+            document.body.style.cursor = e.target.style.cursor;
+        }
+
+        // Kích hoạt border khi click vào imageContainer
+        if (imageContainer) {
+            imageContainer.addEventListener('click', (e) => {
+                if (e.target === baseImage || e.target === imageContainer) {
+                    imageBorderActive = true;
+                    
+                    const imageBorder = document.getElementById('imageBorderOverlay');
+                    if (imageBorder) imageBorder.style.display = 'block';
+                    
+                    const groupBorder = document.getElementById('groupBorderOverlay');
+                    if (groupBorder) groupBorder.style.display = 'none';
+                    
+                    e.stopPropagation();
+                }
+            });
+        }
+
+        // group resize và rotation
+        function createGroupResizeControls() {
+            if (document.getElementById('groupBorderOverlay')) return;
+            
+            const borderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            borderGroup.id = 'groupBorderOverlay';
+            borderGroup.style.display = 'none';
+            borderGroup.style.pointerEvents = 'none';
+            
+            // Border chính
+            const borderRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            borderRect.id = 'groupBorderRect';
+            borderRect.setAttribute('fill', 'none');
+            borderRect.setAttribute('stroke', '#0067b8');
+            borderRect.setAttribute('stroke-width', '3');
+            borderRect.setAttribute('stroke-dasharray', '12,6');
+            borderRect.style.pointerEvents = 'none';
+            borderGroup.appendChild(borderRect);
+            
+            // 8 resize handles
+            const handles = [
+                { pos: 'nw', cursor: 'nwse-resize' },
+                { pos: 'n', cursor: 'ns-resize' },
+                { pos: 'ne', cursor: 'nesw-resize' },
+                { pos: 'e', cursor: 'ew-resize' },
+                { pos: 'se', cursor: 'nwse-resize' },
+                { pos: 's', cursor: 'ns-resize' },
+                { pos: 'sw', cursor: 'nesw-resize' },
+                { pos: 'w', cursor: 'ew-resize' }
+            ];
+            
+            handles.forEach(({ pos, cursor }) => {
+                const handle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                handle.classList.add('group-resize-handle');
+                handle.dataset.position = pos;
+                handle.setAttribute('width', '20');
+                handle.setAttribute('height', '20');
+                handle.setAttribute('fill', 'white');
+                handle.setAttribute('stroke', '#0067b8');
+                handle.setAttribute('stroke-width', '3');
+                handle.setAttribute('rx', '3');
+                handle.style.cursor = cursor;
+                handle.style.pointerEvents = 'all';
+                
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startGroupResize(e, pos);
+                });
+                
+                borderGroup.appendChild(handle);
+            });
+            
+            // rotation handle
+            const rotationHandle = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            rotationHandle.id = 'groupRotationHandle';
+            rotationHandle.style.pointerEvents = 'all';
+            rotationHandle.style.cursor = 'grab';
+            
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('stroke', '#0067b8');
+            line.setAttribute('stroke-width', '2');
+            rotationHandle.appendChild(line);
+            
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('r', '14');
+            circle.setAttribute('fill', 'white');
+            circle.setAttribute('stroke', '#0067b8');
+            circle.setAttribute('stroke-width', '3');
+            rotationHandle.appendChild(circle);
+            
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            icon.setAttribute('d', 'M 0,-7 A 7,7 0 1,1 0,7');
+            icon.setAttribute('fill', 'none');
+            icon.setAttribute('stroke', '#0067b8');
+            icon.setAttribute('stroke-width', '2.5');
+            icon.setAttribute('stroke-linecap', 'round');
+            rotationHandle.appendChild(icon);
+            
+            rotationHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                startGroupRotation(e);
+            });
+            
+            borderGroup.appendChild(rotationHandle);
+            
+            if (svg) svg.appendChild(borderGroup);
+
+            handle.addEventListener('mouseenter', () => {
+                const isHorizontal = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(pos);
+                if (isHorizontal) {
+                    handle.setAttribute('data-tooltip', 'Kéo để tự động xuống dòng');
+                }
+            });
+        }
+
+        function startGroupResize(e, position) {
+            isResizingGroup = true;
+            groupResizeHandle = position;
+            isDragging = false;
+            
+            const svgRect = svg.getBoundingClientRect();
+            const imgWidth = baseImage.naturalWidth || baseImage.width;
+            const imgHeight = baseImage.naturalHeight || baseImage.height;
+            
+            const scaleX = imgWidth / svgRect.width;
+            const scaleY = imgHeight / svgRect.height;
+            
+            groupStartX = (e.clientX - svgRect.left) * scaleX;
+            groupStartY = (e.clientY - svgRect.top) * scaleY;
+            
+            groupStartWidth = window.currentPatchWidth || 400;
+            groupStartHeight = window.currentPatchHeight || 100;
+            
+            originalGroupFontSize = parseInt(fontSizeInput?.value || fontSize?.value || 80);
+            
+            // lưu lại text gốc chưa unwrap
+            window.originalUnwrappedText = unwrapText(currentName);
+            
+            document.body.style.cursor = e.target.style.cursor;
+        }
+
+        // Bắt đầu xoay group
+        function startGroupRotation(e) {
+            isRotatingGroup = true;
+            isDragging = false;
+            
+            const svgRect = svg.getBoundingClientRect();
+            const imgWidth = baseImage.naturalWidth || baseImage.width;
+            const imgHeight = baseImage.naturalHeight || baseImage.height;
+            
+            const scaleX = imgWidth / svgRect.width;
+            const scaleY = imgHeight / svgRect.height;
+            
+            const mouseX = (e.clientX - svgRect.left) * scaleX;
+            const mouseY = (e.clientY - svgRect.top) * scaleY;
+            
+            const dx = mouseX - window.currentTextX;
+            const dy = mouseY - window.currentTextY;
+            rotationStartAngle = Math.atan2(dy, dx) * 180 / Math.PI - patchRotation;
+            
+            document.body.style.cursor = 'grabbing';
+        }
+
+        // Cập nhật border group
+        function updateGroupBorder() {
+            const borderGroup = document.getElementById('groupBorderOverlay');
+            const borderRect = document.getElementById('groupBorderRect');
+            if (!borderGroup || !borderRect) return;
+            
+            // Nếu chưa có patch, dùng text bbox
+            let x, y, w, h;
+            
+            if (bg && bg.style.display !== 'none') {
+                x = parseFloat(bg.getAttribute('x') || 0);
+                y = parseFloat(bg.getAttribute('y') || 0);
+                w = parseFloat(bg.getAttribute('width') || 0);
+                h = parseFloat(bg.getAttribute('height') || 0);
+            } else if (text) {
+                try {
+                    const bbox = text.getBBox();
+                    x = bbox.x;
+                    y = bbox.y;
+                    w = bbox.width;
+                    h = bbox.height;
+                } catch (e) {
+                    return;
+                }
+            } else {
+                return;
+            }
+            
+            if (w === 0 || h === 0) return;
+            
+            const padding = 15;
+            borderRect.setAttribute('x', x - padding);
+            borderRect.setAttribute('y', y - padding);
+            borderRect.setAttribute('width', w + padding * 2);
+            borderRect.setAttribute('height', h + padding * 2);
+            
+            const transform = `rotate(${patchRotation}, ${window.currentTextX}, ${window.currentTextY})`;
+            borderRect.setAttribute('transform', transform);
+            
+            // cập nhật vị trí handles
+            const positions = {
+                'nw': { x: x - padding - 10, y: y - padding - 10 },
+                'n':  { x: x + w/2 - 10, y: y - padding - 10 },
+                'ne': { x: x + w + padding - 10, y: y - padding - 10 },
+                'e':  { x: x + w + padding - 10, y: y + h/2 - 10 },
+                'se': { x: x + w + padding - 10, y: y + h + padding - 10 },
+                's':  { x: x + w/2 - 10, y: y + h + padding - 10 },
+                'sw': { x: x - padding - 10, y: y + h + padding - 10 },
+                'w':  { x: x - padding - 10, y: y + h/2 - 10 }
+            };
+            
+            borderGroup.querySelectorAll('.group-resize-handle').forEach(handle => {
+                const pos = handle.dataset.position;
+                if (positions[pos]) {
+                    handle.setAttribute('x', positions[pos].x);
+                    handle.setAttribute('y', positions[pos].y);
+                    handle.setAttribute('transform', transform);
+                }
+            });
+            
+            // Rotation handle
+            const rotationHandle = document.getElementById('groupRotationHandle');
+            if (rotationHandle) {
+                const rotHandleX = x + w/2;
+                const rotHandleY = y - padding - 50;
+                
+                rotationHandle.setAttribute('transform', `translate(${rotHandleX}, ${rotHandleY}) rotate(${patchRotation})`);
+                
+                const line = rotationHandle.querySelector('line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', 0);
+                line.setAttribute('y2', 45);
+            }
+        }
+
+        // Áp dụng xoay patch
+        function applyPatchRotation() {
+            if (!text) return;
+            
+            const transform = `rotate(${patchRotation}, ${window.currentTextX}, ${window.currentTextY})`;
+            
+            if (bg && bg.style.display !== 'none') {
+                bg.setAttribute('transform', transform);
+            }
+            text.setAttribute('transform', transform);
+            
+            updateGroupBorder();
+        }
+
+        // Click events
+        if (bg) {
+            bg.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                imageBorderActive = false;
+                
+                const groupBorder = document.getElementById('groupBorderOverlay');
+                if (groupBorder) {
+                    groupBorder.style.display = 'block';
+                    updateGroupBorder();
+                }
+                
+                const imageBorder = document.getElementById('imageBorderOverlay');
+                if (imageBorder) imageBorder.style.display = 'none';
+            });
+        }
+
+        if (text) {
+            text.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                imageBorderActive = false;
+                
+                const groupBorder = document.getElementById('groupBorderOverlay');
+                if (groupBorder) {
+                    groupBorder.style.display = 'block';
+                    updateGroupBorder();
+                }
+                
+                const imageBorder = document.getElementById('imageBorderOverlay');
+                if (imageBorder) imageBorder.style.display = 'none';
+            });
+        }
+
+        // MOUSEMOVE
+        document.addEventListener('mousemove', (e) => {
+                if (isResizingImage) {
+                    e.preventDefault();
+                    
+                    const deltaX = e.clientX - imageStartX;
+                    let newWidth = imageStartWidth;
+                    
+                    switch(imageResizeHandle) {
+                        case 'se':
+                        case 'ne':
+                            newWidth = imageStartWidth + deltaX;
+                            break;
+                        case 'sw':
+                        case 'nw':
+                            newWidth = imageStartWidth - deltaX;
+                            break;
+                    }
+                    
+                    newWidth = Math.max(300, newWidth);
+                    const newHeight = newWidth / imageAspectRatio;
+                    
+                    imageContainer.style.width = newWidth + 'px';
+                    imageContainer.style.height = newHeight + 'px';
+                    
+                    if (window.updateSVGViewBox) window.updateSVGViewBox();
+                }
+                
+                if (isResizingGroup) {
             e.preventDefault();
-            e.stopPropagation();
             
-            imageBorderActive = false;
+            const svgRect = svg.getBoundingClientRect();
+            const imgWidth = baseImage.naturalWidth || baseImage.width;
+            const imgHeight = baseImage.naturalHeight || baseImage.height;
             
-            const groupBorder = document.getElementById('groupBorderOverlay');
-            if (groupBorder) {
-                groupBorder.style.display = 'block';
-                updateGroupBorder();
+            const scaleX = imgWidth / svgRect.width;
+            const scaleY = imgHeight / svgRect.height;
+            
+            const currentX = (e.clientX - svgRect.left) * scaleX;
+            const currentY = (e.clientY - svgRect.top) * scaleY;
+            
+            const deltaX = currentX - groupStartX;
+            const deltaY = currentY - groupStartY;
+            
+            let newWidth = groupStartWidth;
+            let newHeight = groupStartHeight;
+            
+            // Chỉ resize theo chiều NGANG (E/W handles) mới auto-wrap
+            const isHorizontalResize = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(groupResizeHandle);
+            
+            if (['nw', 'ne', 'sw', 'se'].includes(groupResizeHandle)) {
+                switch(groupResizeHandle) {
+                    case 'se':
+                        newWidth = groupStartWidth + deltaX;
+                        newHeight = groupStartHeight + deltaY;
+                        break;
+                    case 'sw':
+                        newWidth = groupStartWidth - deltaX;
+                        newHeight = groupStartHeight + deltaY;
+                        break;
+                    case 'ne':
+                        newWidth = groupStartWidth + deltaX;
+                        newHeight = groupStartHeight - deltaY;
+                        break;
+                    case 'nw':
+                        newWidth = groupStartWidth - deltaX;
+                        newHeight = groupStartHeight - deltaY;
+                        break;
+                }
+            } else {
+                switch(groupResizeHandle) {
+                    case 'n':
+                        newHeight = groupStartHeight - deltaY;
+                        break;
+                    case 's':
+                        newHeight = groupStartHeight + deltaY;
+                        break;
+                    case 'e':
+                        newWidth = groupStartWidth + deltaX;
+                        break;
+                    case 'w':
+                        newWidth = groupStartWidth - deltaX;
+                        break;
+                }
             }
             
-            const imageBorder = document.getElementById('imageBorderOverlay');
-            if (imageBorder) imageBorder.style.display = 'none';
-        });
-    }
-
-    if (text) {
-        text.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            newWidth = Math.max(100, newWidth);
+            newHeight = Math.max(50, newHeight);
             
-            imageBorderActive = false;
-            
-            const groupBorder = document.getElementById('groupBorderOverlay');
-            if (groupBorder) {
-                groupBorder.style.display = 'block';
-                updateGroupBorder();
+            //  Auto-wrap text nếu resize ngang
+            if (isHorizontalResize && window.originalUnwrappedText) {
+                const scaleFactor = imgWidth / 11417;
+                const paddingX = (window.currentPaddingX || currentPaddingX || 60) * scaleFactor;
+                
+                // Available width cho text (trừ padding)
+                const availableWidth = newWidth - (paddingX * 2);
+                
+                // Auto wrap
+                const wrappedText = autoWrapText(
+                    window.originalUnwrappedText,
+                    availableWidth,
+                    originalGroupFontSize,
+                    fontFamily?.value || 'Arial, sans-serif',
+                    isBold,
+                    isItalic
+                );
+                
+                // Cập nhật text
+                if (wrappedText !== currentName) {
+                    currentName = wrappedText;
+                    if (nameInput) nameInput.value = wrappedText;
+                }
             }
             
-            const imageBorder = document.getElementById('imageBorderOverlay');
-            if (imageBorder) imageBorder.style.display = 'none';
-        });
-    }
-
-    // MOUSEMOVE
-    document.addEventListener('mousemove', (e) => {
-        if (isResizingImage) {
-            e.preventDefault();
+            window.currentPatchWidth = newWidth;
+            window.currentPatchHeight = newHeight;
             
-            const deltaX = e.clientX - imageStartX;
-            let newWidth = imageStartWidth;
+            isManualResizedPatch = true;
             
-            switch(imageResizeHandle) {
-                case 'se':
-                case 'ne':
-                    newWidth = imageStartWidth + deltaX;
-                    break;
-                case 'sw':
-                case 'nw':
-                    newWidth = imageStartWidth - deltaX;
-                    break;
-            }
+            // Scale font size theo tỷ lệ
+            const scaleFactor = Math.min(newWidth / groupStartWidth, newHeight / groupStartHeight);
+            const newFontSize = Math.round(originalGroupFontSize * scaleFactor);
             
-            newWidth = Math.max(300, newWidth);
-            const newHeight = newWidth / imageAspectRatio;
+            if (fontSizeInput) fontSizeInput.value = Math.max(10, Math.min(500, newFontSize));
+            if (fontSize) fontSize.value = Math.max(10, Math.min(500, newFontSize));
             
-            imageContainer.style.width = newWidth + 'px';
-            imageContainer.style.height = newHeight + 'px';
-            
-            if (window.updateSVGViewBox) window.updateSVGViewBox();
+            updateName();
+            updateGroupBorder();
         }
-        
-        if (isResizingGroup) {
-    e.preventDefault();
     
-    const svgRect = svg.getBoundingClientRect();
-    const imgWidth = baseImage.naturalWidth || baseImage.width;
-    const imgHeight = baseImage.naturalHeight || baseImage.height;
-    
-    const scaleX = imgWidth / svgRect.width;
-    const scaleY = imgHeight / svgRect.height;
-    
-    const currentX = (e.clientX - svgRect.left) * scaleX;
-    const currentY = (e.clientY - svgRect.top) * scaleY;
-    
-    const deltaX = currentX - groupStartX;
-    const deltaY = currentY - groupStartY;
-    
-    let newWidth = groupStartWidth;
-    let newHeight = groupStartHeight;
-    
-    // Chỉ resize theo chiều NGANG (E/W handles) mới auto-wrap
-    const isHorizontalResize = ['e', 'w', 'ne', 'nw', 'se', 'sw'].includes(groupResizeHandle);
-    
-    if (['nw', 'ne', 'sw', 'se'].includes(groupResizeHandle)) {
-        switch(groupResizeHandle) {
-            case 'se':
-                newWidth = groupStartWidth + deltaX;
-                newHeight = groupStartHeight + deltaY;
-                break;
-            case 'sw':
-                newWidth = groupStartWidth - deltaX;
-                newHeight = groupStartHeight + deltaY;
-                break;
-            case 'ne':
-                newWidth = groupStartWidth + deltaX;
-                newHeight = groupStartHeight - deltaY;
-                break;
-            case 'nw':
-                newWidth = groupStartWidth - deltaX;
-                newHeight = groupStartHeight - deltaY;
-                break;
-        }
-    } else {
-        switch(groupResizeHandle) {
-            case 'n':
-                newHeight = groupStartHeight - deltaY;
-                break;
-            case 's':
-                newHeight = groupStartHeight + deltaY;
-                break;
-            case 'e':
-                newWidth = groupStartWidth + deltaX;
-                break;
-            case 'w':
-                newWidth = groupStartWidth - deltaX;
-                break;
-        }
-    }
-    
-    newWidth = Math.max(100, newWidth);
-    newHeight = Math.max(50, newHeight);
-    
-    // ✅ AUTO WRAP TEXT KHI RESIZE NGANG
-    if (isHorizontalResize && window.originalUnwrappedText) {
-        const scaleFactor = imgWidth / 11417;
-        const paddingX = (window.currentPaddingX || currentPaddingX || 60) * scaleFactor;
-        
-        // Available width cho text (trừ padding)
-        const availableWidth = newWidth - (paddingX * 2);
-        
-        // Auto wrap
-        const wrappedText = autoWrapText(
-            window.originalUnwrappedText,
-            availableWidth,
-            originalGroupFontSize,
-            fontFamily?.value || 'Arial, sans-serif',
-            isBold,
-            isItalic
-        );
-        
-        // Cập nhật text
-        if (wrappedText !== currentName) {
-            currentName = wrappedText;
-            if (nameInput) nameInput.value = wrappedText;
-        }
-    }
-    
-    window.currentPatchWidth = newWidth;
-    window.currentPatchHeight = newHeight;
-    
-    isManualResizedPatch = true;
-    
-    // Scale font size theo tỷ lệ
-    const scaleFactor = Math.min(newWidth / groupStartWidth, newHeight / groupStartHeight);
-    const newFontSize = Math.round(originalGroupFontSize * scaleFactor);
-    
-    if (fontSizeInput) fontSizeInput.value = Math.max(10, Math.min(500, newFontSize));
-    if (fontSize) fontSize.value = Math.max(10, Math.min(500, newFontSize));
-    
-    updateName();
-    updateGroupBorder();
-}
-
-        
+        // Rotate group
         if (isRotatingGroup) {
             e.preventDefault();
             

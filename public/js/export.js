@@ -153,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             // Trong hàm renderSaved, khi load design:
-
             div.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('delete-btn')) return;
 
@@ -168,14 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 console.log(' Loading design config:', config);
 
-                // Set tọa độ CENTER trước để tránh reset về giữa
+                // Set tọa độ center trước để tránh reset về giữa
                 window.currentTextX = config.x || 0;
                 window.currentTextY = config.y || 0;
                 window.currentPatchWidth = config.patchWidth || 0;
                 window.currentPatchHeight = config.patchHeight || 0;
                 window.currentPatchCornerRadius = config.patchCornerRadius || 25;
                 
-                //'KHÔI PHỤC ROTATION & MANUAL RESIZE
+                // khôi phục rotation
                 if (config.patchRotation !== undefined) {
                     if (typeof patchRotation !== 'undefined') {
                         patchRotation = config.patchRotation;
@@ -184,8 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                //'QUAN TRỌNG: RESET hasSetupBg & hasSetupStroke TRƯỚC KHI LOAD
-                // Expose từ home.js
+                // Cập nhật trạng thái hasPatch và strokeColor
                 if (window.setHasSetupBg) {
                     window.setHasSetupBg(config.hasPatch === true);
                 }
@@ -228,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     nameInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
 
-                // SET FONT FAMILY (CÓ THỂ CÓ CUSTOM FONT)
+                // Xử lý fontFamily với customFontFile
                 if (fontFamily) {
                     if (config.customFontFile) {
                         let foundOption = null;
@@ -263,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (bgColor) bgColor.value = config.bgColor || '#565559';
                 if (strokeColor) strokeColor.value = config.strokeColor || '#dec27a';
 
-                //'Cập nhật trạng thái format
+                // Cập nhật trạng thái format
                 if (btnBold) {
                     const isBold = config.fontWeight === 'bold';
                     btnBold.classList.toggle('active', isBold);
@@ -280,13 +278,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (window.updateUnderlineState) window.updateUnderlineState(isUnderline);
                 }
 
-                //'Lấy serverFile từ option đã chọn
+                // Lấy serverFile từ option đã chọn
                 const selectedOption = fontFamily?.options[fontFamily.selectedIndex];
                 const customFontFile = selectedOption?.dataset?.serverFile || config.customFontFile || null;
 
                 console.log('Custom font file:', customFontFile);
 
-                //'Cập nhật localStorage với ĐẦY ĐỦ THÔNG TIN
+                // Cập nhật localStorage để giữ trạng thái
                 localStorage.setItem('currentDesign', JSON.stringify({
                     name: config.text || '',
                     textX: config.x || 0,
@@ -297,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     patchRotation: config.patchRotation || 0,
                     isManualResizedPatch: config.isManualResizedPatch || false,
                     
-                    //'LƯU hasPatch
+                    // Lưu trang thái hasPatch
                     hasPatch: config.hasPatch === true,
                     
                     fontFamily: config.fontFamily || 'Arial, sans-serif',
@@ -424,12 +422,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                //'LẤY CUSTOM FONT FILE TỪ SELECT
+                //  Lấy serverFile từ option đã chọn
                 const fontFamilySelect = document.getElementById('fontFamily');
                 const selectedOption = fontFamilySelect?.options[fontFamilySelect.selectedIndex];
                 const customFontFile = selectedOption?.dataset?.serverFile || null;
 
-                //'MERGE CONFIG VỚI CUSTOM FONT FILE
+                //  Cập nhật config với customFontFile
                 const configWithFont = {
                     ...config,
                     customFontFile: customFontFile
@@ -449,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         name: config.text,
                         base_image: uploadedImagePath,
-                        config: configWithFont, //'GỬI CONFIG ĐẦY ĐỦ
+                        config: configWithFont,     
                         export_image: thumbnailPath
                     })
                 });
