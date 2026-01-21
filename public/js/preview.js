@@ -186,11 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.fillText(upperLine, config.currentTextX, y);
                     
                     // Bold: vẽ thêm layer để đậm hơn
-                    if (config.isBold) {
-                        ctx.fillText(upperLine, config.currentTextX + 1, y);
-                        ctx.fillText(upperLine, config.currentTextX, y + 1);
-                        ctx.fillText(upperLine, config.currentTextX + 1, y + 1);
-                    }
+                    // if (config.isBold) {
+                    //     ctx.fillText(upperLine, config.currentTextX + 1, y);
+                    //     ctx.fillText(upperLine, config.currentTextX, y + 1);
+                    //     ctx.fillText(upperLine, config.currentTextX + 1, y + 1);
+                    // }
                     
                     // Underline
                     if (config.isUnderline) {
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Hiện loading
                 if (window.showToast) {
-                    window.showToast('Tạo ảnh xem trước...', 'info');
+                    window.showToast('Tạo ảnh xem trước', 'info');
                 }
                 
                 // Tạo preview blob
