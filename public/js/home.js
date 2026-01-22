@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 textY: window.currentTextY,
                 patchWidth: window.currentPatchWidth,
                 patchHeight: window.currentPatchHeight,
-                patchRotation: patchRotation || 0, // ✅ ĐÃ LƯU
+                patchRotation: patchRotation || 0,
                 isManualResizedPatch: isManualResizedPatch || false,
                 patchCornerRadius: currentCornerRadius || 25,
                 
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             localStorage.setItem('currentDesign', JSON.stringify(design));
-            console.log('Saved design - rotation:', patchRotation, design); // ✅ KIỂM TRA
+            console.log('Saved design - rotation:', patchRotation, design);
             
             if (text && bg) {
                 saveElementState(text, bg);

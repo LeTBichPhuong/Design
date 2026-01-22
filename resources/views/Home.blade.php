@@ -170,7 +170,7 @@
                                 value="25" 
                                 min="0" 
                                 max="200" 
-                                style="width: 70px; padding: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; border-radius: 4px; text-align: center;"
+                                style="width: 70px; padding: 5px 0 5px 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; border-radius: 4px; text-align: center;"
                             >
                         </label>
                         <input 

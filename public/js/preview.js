@@ -290,10 +290,49 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const config = getDesignConfig();
                 
-                // Kiểm tra có text không
+                // Nếu không có text, mở ảnh gốc
                 if (!config.currentName || config.currentName.trim() === '') {
-                    if (window.showToast) {
-                        window.showToast('Chưa có nội dung text để xem trước', 'info');
+                    // Nếu là Data URL (chưa lưu) → Upload lên server
+                    if (baseImage.src.startsWith('data:')) {
+                        try {
+                            // Convert data URL to blob
+                            const response = await fetch(baseImage.src);
+                            const blob = await response.blob();
+                            
+                            // Upload lên server
+                            const formData = new FormData();
+                            const timestamp = Date.now();
+                            formData.append('image', blob, `image_${timestamp}.png`);
+                            
+                            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                            
+                            const uploadRes = await fetch('/upload-image', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrf,
+                                    'Accept': 'application/json'
+                                },
+                                body: formData
+                            });
+                            
+                            if (!uploadRes.ok) {
+                                throw new Error('Upload failed');
+                            }
+                            
+                            const data = await uploadRes.json();
+                            const imageUrl = '/' + data.path.replace(/^\/+/, '');
+                            
+                            // Mở ảnh đã upload
+                            window.open(window.location.origin + imageUrl, '_blank');
+                        } catch (err) {
+                            console.error('Error uploading base image:', err);
+                            if (window.showToast) {
+                                window.showToast('Không thể upload ảnh', 'error');
+                            }
+                        }
+                    } else {
+                        // URL thật từ server → Mở trực tiếp
+                        window.open(baseImage.src, '_blank');
                     }
                     return;
                 }
