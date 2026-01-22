@@ -337,11 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                // Hiện loading
-                if (window.showToast) {
-                    window.showToast('Tạo ảnh xem trước', 'info');
-                }
-                
                 // Tạo preview blob
                 const blob = await generatePreviewBlob();
                 
