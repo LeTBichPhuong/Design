@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return;
                 }
-                
+
                 // Tạo preview blob
                 const blob = await generatePreviewBlob();
                 
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         baseImage.style.cursor = 'context-menu';
-        baseImage.title = 'Click chuột phải để tạo ảnh xem trước (có thể chia sẻ link)';
+        baseImage.title = 'Click chuột phải để tạo ảnh xem trước';
         
         console.log('Context menu initialized');
     }
