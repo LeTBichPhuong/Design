@@ -530,39 +530,39 @@
     
     /* AUTH BUTTONS trong sidebar bottom */
     .saved-designs .auth-buttons {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 60px; /* Chỉ chiếm width của left-toolbar */
-    gap: 8px;
-    padding: 10px 5px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom, 20px));
-    display: flex;
-    flex-direction: column; /* Xếp dọc */
-    flex-shrink: 0;
-    background: #f8f9fa;
-    border-top: 1px solid #e0e0e0;
-    z-index: 10;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    height: auto;
-    align-items: center;
-}
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 60px; /* Chỉ chiếm width của left-toolbar */
+        gap: 8px;
+        padding: 10px 5px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 20px));
+        display: flex;
+        flex-direction: column; /* Xếp dọc */
+        flex-shrink: 0;
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+        z-index: 10;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        height: auto;
+        align-items: center;
+    }
 
-.saved-designs.mobile-show .auth-buttons {
-    transform: translateX(0);
-}
+    .saved-designs.mobile-show .auth-buttons {
+        transform: translateX(0);
+    }
 
-.auth-btn {
-    flex: 0;
-    width: 100%;
-    padding: 8px 5px;
-    font-size: 10px;
-    min-height: 38px;
-    white-space: nowrap;
-    text-align: center;
-    line-height: 1.2;
-}
+    .auth-btn {
+        flex: 0;
+        width: 100%;
+        padding: 8px 5px;
+        font-size: 10px;
+        min-height: 38px;
+        white-space: nowrap;
+        text-align: center;
+        line-height: 1.2;
+    }
     
     /* ACTION BUTTONS */
     .action-buttons {
