@@ -1115,7 +1115,7 @@ class DesignController extends Controller
     public function uploadPreview(Request $request)
     {
         $request->validate([
-            'image' => 'required|file|image|max:10240', // 10MB
+            'image' => 'required|file|image|max:51200', // 50MB
         ]);
 
         try {
