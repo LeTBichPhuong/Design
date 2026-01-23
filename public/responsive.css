@@ -1004,3 +1004,55 @@
         height: 40px;
     }
 }
+
+/* FIX CHO SAFARI MOBILE - Tránh bị che bởi thanh điều hướng */
+@media (max-width: 768px) {
+    /* Thêm padding bottom cho sidebar để tránh bị che */
+    .saved-designs .user-menu,
+    .saved-designs .auth-buttons {
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    }
+    
+    /* Điều chỉnh vị trí user dropdown */
+    .saved-designs .user-dropdown {
+        bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    /* Thêm padding cho toàn bộ body để tránh bị che */
+    body {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Điều chỉnh left panel để nút "Tạo thiết kế mới" không bị che */
+    .left-panel {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    }
+    
+    /* Điều chỉnh saved content */
+    #menuSaved .saved-content {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    }
+    
+    /* Menu Text, Font, Colors */
+    #menuText,
+    #menuFont,
+    #menuColors {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Landscape mode */
+@media (max-width: 768px) and (orientation: landscape) {
+    .saved-designs .user-menu,
+    .saved-designs .auth-buttons {
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    }
+    
+    .saved-designs .user-dropdown {
+        bottom: calc(56px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    #menuSaved .saved-content {
+        padding-bottom: calc(65px + env(safe-area-inset-bottom));
+    }
+}
