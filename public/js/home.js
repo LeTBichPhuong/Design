@@ -2707,7 +2707,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             localStorage.setItem('currentDesign', JSON.stringify(design));
-            console.log('Saved design - hasPatch:', hasSetupBg, design);
         } catch (e) {
             console.error('Error saving design:', e);
         }
