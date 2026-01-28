@@ -6,7 +6,7 @@
     <title>Design Studio</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('home.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/responsive.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('responsive.css') }}?v={{ time() }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>

@@ -21,11 +21,11 @@
     }
     
     .left-toolbar {
-        width: 60px;
+        width: 80px;
     }
     
     .left-panel {
-        width: calc(250px - 60px);
+        width: calc(250px - 80px);
     }
     
     .panel-content h2 {
@@ -143,6 +143,10 @@
         flex-direction: row;
     }
     
+    .saved-designs.panel-closed {
+        width: unset;
+    }
+
     /* SIDEBAR - Bao gồm cả toolbar và panel */
     .saved-designs {
         position: fixed;
@@ -170,8 +174,8 @@
     
     /* LEFT TOOLBAR trên mobile */
     .left-toolbar {
-        width: 60px;
-        padding-top: 60px;
+        width: 80px;
+        padding-top: 20px;
         flex-shrink: 0;
     }
     
@@ -191,7 +195,7 @@
     /* LEFT PANEL trên mobile */
     .left-panel {
         flex: 1;
-        padding-top: 60px;
+        padding-top: 10px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
@@ -311,6 +315,7 @@
         width: 36px;
         height: 36px;
         font-size: 20px;
+        margin-bottom: 90px;
     }
     
     /* Menu Text, Font, Colors */
@@ -448,20 +453,20 @@
         width: 280px;
         max-width: 85%;
         padding: 12px 15px;
-        gap: 10px;
+        gap: 5px;
         height: auto;
         min-height: 60px;
         border-radius: 0;
         justify-content: flex-start;
+        border: none;
         margin: 0;
-        border-top: 1px solid #e0e0e0;
-        background: #f8f9fa;
         flex-shrink: 0;
         display: flex !important;
         align-items: center;
         z-index: 10;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        margin-bottom: 100px;
     }
     
     .saved-designs.mobile-show .user-menu {
@@ -533,20 +538,19 @@
         position: fixed;
         bottom: 0;
         left: 0;
-        width: 60px; /* Chỉ chiếm width của left-toolbar */
+        width: auto; /* Chỉ chiếm width của left-toolbar */
         gap: 8px;
         padding: 10px 5px;
         padding-bottom: calc(10px + env(safe-area-inset-bottom, 20px));
         display: flex;
         flex-direction: column; /* Xếp dọc */
         flex-shrink: 0;
-        background: #f8f9fa;
-        border-top: 1px solid #e0e0e0;
         z-index: 10;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         height: auto;
         align-items: center;
+        margin-bottom: 100px;
     }
 
     .saved-designs.mobile-show .auth-buttons {
@@ -1014,12 +1018,12 @@
     /* Thêm padding bottom cho sidebar để tránh bị che */
     .saved-designs .user-menu,
     .saved-designs .auth-buttons {
-        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
     }
     
     /* Điều chỉnh vị trí user dropdown */
     .saved-designs .user-dropdown {
-        bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+        bottom: calc(80px + env(safe-area-inset-bottom)) !important;
     }
     
     /* Thêm padding cho toàn bộ body để tránh bị che */
@@ -1029,19 +1033,19 @@
     
     /* Điều chỉnh left panel để nút "Tạo thiết kế mới" không bị che */
     .left-panel {
-        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+        padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
     
     /* Điều chỉnh saved content */
     #menuSaved .saved-content {
-        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+        bottom: calc(80px + env(safe-area-inset-bottom));
     }
     
     /* Menu Text, Font, Colors */
     #menuText,
     #menuFont,
     #menuColors {
-        padding-bottom: calc(60px + env(safe-area-inset-bottom));
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
     }
 }
 
