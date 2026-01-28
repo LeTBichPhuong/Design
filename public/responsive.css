@@ -315,7 +315,7 @@
         width: 36px;
         height: 36px;
         font-size: 20px;
-        margin-bottom: 90px;
+        margin-bottom: 80px;
     }
     
     /* Menu Text, Font, Colors */
@@ -466,7 +466,7 @@
         z-index: 10;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
-        margin-bottom: 100px;
+        margin-bottom: 80px;
     }
     
     .saved-designs.mobile-show .user-menu {
@@ -485,14 +485,7 @@
     
     /* Hiện tên user trong sidebar */
     .saved-designs .user-name {
-        display: block !important;
-        font-size: 14px;
-        font-weight: 600;
-        color: #1a1a1a;
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: none !important;
     }
     
     /* Icon mũi tên hướng lên */
@@ -550,7 +543,7 @@
         transition: transform 0.3s ease;
         height: auto;
         align-items: center;
-        margin-bottom: 100px;
+        margin-bottom: 80px;
     }
 
     .saved-designs.mobile-show .auth-buttons {
